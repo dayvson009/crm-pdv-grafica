@@ -1,0 +1,300 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body{
+  font-family: Arial;
+  background-color: #fafafc;
+  padding: 10px;
+}
+
+.sidebar{
+  width: 200px;
+  padding: 10px;
+  background: #fff;
+  height: 95vh;
+  position: fixed;
+  border-radius: 10px;
+  border: 1px solid #ececec;
+}
+
+.sidebar .logo{
+  margin: 10px auto 27px;
+  display: block;
+}
+
+.sidebar ul{
+  list-style: none; padding: 0;
+}
+
+.sidebar ul li{
+  width: 100%;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.sidebar ul a{
+  text-decoration: none;
+  font-weight: bold;
+  color: #848496;
+  width: 100%;
+  display: block;
+}
+
+.sidebar ul li.active{
+  background-color: #1da4fc;
+}
+
+.sidebar ul li.active a{
+  color: #fff;
+}
+
+/* Layout das páginas */
+
+.title-page{
+  color: #7e30d2;
+  margin-bottom: 50px;
+}
+
+
+/* Avisos */
+
+.card-avisos {
+  background: #fff;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 12px -3px #ccc;
+  margin-bottom: 10px;
+}
+
+.card-avisos button{
+  border: none;
+  background-color: #fff;
+  cursor: pointer;
+}
+
+.form-avisos{
+  background: #e8f1ff;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  max-width: 400px;
+}
+
+.form-avisos input, .form-avisos select, .form-avisos textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0 20px;
+  border: none;
+  border-radius: 5px;
+  background-color: #fff;
+}
+
+.form-avisos label{
+  font-weight: bold;
+  color: #0087e1;
+}
+
+.form-avisos textarea{
+  min-height: 200px;
+}
+
+.form-avisos button {
+  padding: 10px 15px;
+  background: #8c5bf5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Vendas */
+
+.form-vendas{
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #fff;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.form-vendas label{
+  font-weight: bold;
+  color: #1988d0;
+  margin-bottom: 5px;
+  display: block;
+  font-size: .9em;
+  margin-right: 20px;
+}
+
+.form-vendas select, .form-vendas input{
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #fff;
+  border: 1px solid #d9d9d9;
+  margin-bottom: 20px;
+  margin-right: 20px;
+}
+
+.card-value {
+  padding: 10px 20px 30px 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  background-color: #fff;
+}
+
+.card-value span{
+  font-size: 2em;
+  display: block;
+  text-align: right;
+  font-weight: bold;
+  color: #1da4fc;
+}
+
+.card-value strong{
+  color: #828184;
+}
+
+.card-value span:before{
+  content: "R$";
+  font-size: .5em;
+  position: relative;
+  bottom: 10px;
+  color: #888885;
+  margin-right: 5px;
+}
+
+.form-vendas button{
+  padding: 10px 20px;
+  background-color: #8c5bf5;
+  color: #fff;
+  border-radius: 5px;
+  border: none;
+  width: 100%;
+}
+
+#tabela-itens{
+  background-color: #fff;
+  border-radius: 10px;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+#tabela-itens th{
+  padding: 10px;
+  color: #2d2d2d;
+}
+#tabela-itens tr{
+  border-bottom: 1px solid #eaeaea;
+}
+#tabela-itens td{
+  padding: 10px;
+  text-align: center;
+  color: #444;
+}
+
+.remove-item{
+  border-radius: 20px;
+  border: none;
+  width: 20px;
+  height: 20px;
+  background-color: #f00;
+  color: #fff;
+}
+
+/* Painel de Pedidos */
+
+.dashboard{
+      min-width: 1100px;
+    }
+    .board { display: flex; gap: 10px; }
+
+    .column {
+      background: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px #ccc;
+      width: 16%;
+      min-height: 300px;
+    }
+    .column h3 {
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 16px;
+      margin-top: -35px;
+    }
+    .card {
+      background: #e8f1ff;
+      margin: 5px 0;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: grab;
+      font-size: 14px;
+    }
+    .popup {
+      display: none;
+      position: fixed;
+      background: #f5f5fb;
+      padding: 20px;
+      border-radius: 10px;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 0 40px #888;
+      z-index: 999;
+      border: 2px solid #7c3ac8;
+    }
+    .dropzone{
+      height: 100%;
+    }
+
+    .client{
+      background-color: #ffff;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      line-height: 150%;
+    }
+
+    .client label{
+      font-weight: bold;
+    }
+
+    .division {
+      margin: 20px;
+      text-align: center;
+      color: #7e30d2;
+    }
+
+    #tabela-editar-itens input {
+      border: none;
+      padding: 10px;
+    }
+
+    #tabela-editar-itens .remove {
+      width: 30px;
+      height: 30px;
+      border-radius: 20px;
+      border: none;
+      background-color: #ff4b4b;
+      margin: 0 auto;
+      display: block;
+      cursor: pointer;
+    }
+
+    .buttons{
+      padding: 10px;
+      background-color: #1aa5fb;
+      border: none;
+      border-radius: 5px;
+      margin-right: 10px;
+      margin-top: 20px;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+    }

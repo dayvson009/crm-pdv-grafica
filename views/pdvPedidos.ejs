@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PDV</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('partials/sidebar') %>
+
+  <div style="padding: 20px; margin-left: 210px;">
+    <h2 class="title-page">Novo Pedido</h2>
+    <div id="modo-pedido" style="display: flex; gap:20px;">
+      <form id="form-pedido" class="form-vendas">
+        <div>
+          <div style="display: flex;">
+            <div>
+              <label>Nome Cliente:</label>
+              <input type="text" name="nome" required>
+            </div>
+            <div>
+              <label>Telefone:</label>
+              <input type="text" name="telefone" required>
+            </div>
+          </div>
+          <div style="display: flex;">
+            <div>
+              <label>Email:</label>
+              <input type="email" name="email">
+            </div>
+            <div>
+              <label>Data de Entrega:</label>
+              <input type="date" name="dataEntrega" id="data-entrega">
+            </div>
+          </div>
+          <div style="display: flex;">
+            <div>
+              <label>Produto:</label>
+              <select name="produto" id="pedido-produto">
+                <% produtos.forEach(p => { %>
+                  <option value="<%= p.nome %>" data-preco="<%= p.preco.replace(',', '.') %>"><%= p.nome %></option>
+                <% }) %>
+              </select>
+            </div>
+            <div>
+              <label>Quantidade:</label>
+              <input type="number" id="pedido-quantidade" value="1" min="1" style="width: 90px;text-align: center;">
+            </div>
+          </div>
+          <div style="display: flex;">
+            <div>
+              <label>Valor Pago:</label>
+              <input type="text" id="pedido-valor-pago" step="0.01" placeholder="0">
+            </div>
+            <div>
+              <label>Desconto:</label>
+              <input type="text" id="pedido-desconto" step="0.01" placeholder="0">
+            </div>
+          </div>
+          <div style="display: flex;">
+            <div>
+              <label>Forma de Pagamento</label>
+              <select id="pedido-forma-pagamento">
+                <option>Pendente Pagamento</option>
+                <option>Cartão</option>
+                <option>Dinheiro</option>
+                <option>Pix</option>
+              </select>
+            </div>
+            <div>
+              <label>Observação:</label>
+              <input type="text" id="pedido-observacao">
+            </div>
+          </div>
+          <div style="display: flex; gap: 20px;">
+            <button type="button" id="btn-adicionar">Adicionar</button>
+            <button type="button" id="btn-concluir">Concluir Pedido</button>
+            <button type="reset">Cancelar</button>
+          </div>
+        </div>
+      </form>
+      <div style="display: flex; flex-direction: column;">
+        <div style="display: flex; gap: 10px;">
+          <div class="card-value"><strong>Total</strong><span id="pedido-total">0.00</span></div>
+          <div class="card-value"><strong>Total com Desconto</strong><span id="pedido-total-desconto">0.00</span></div>
+          <div class="card-value"><strong>Valor Restante</strong><span id="totalApagar">0.00</span></div>
+        </div>
+          <div>
+            <h4>Itens do Pedido:</h4>
+            <table id="tabela-itens">
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Qtd</th>
+                <th>Desconto</th>
+                <th>Pago</th>
+                <th>Total</th>
+                <th>Forma</th>
+                <th>Observação</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+  const itensPedido = [];
+  const tabela = document.querySelector('#tabela-itens tbody');
+
+  document.getElementById('btn-adicionar').onclick = () => {
+    const produtoSel = document.getElementById('pedido-produto').selectedOptions[0];
+    const nome = produtoSel.value;
+    const preco = parseFloat(produtoSel.dataset.preco.replace("R$ ", "") || 0);
+    const quantidade = parseInt(document.getElementById('pedido-quantidade').value || 1);
+    const desconto = parseFloat(document.getElementById('pedido-desconto').value || 0);
+    const valorPago = parseFloat(document.getElementById('pedido-valor-pago').value || 0);
+    const formaPagamento = document.getElementById('pedido-forma-pagamento').value;
+    const observacao = document.getElementById('pedido-observacao').value;
+
+    const valorTotal = (preco * quantidade) - desconto;
+
+    const item = {
+      produto: nome,
+      quantidade,
+      desconto,
+      valorPago,
+      valorTotal,
+      formaPagamento,
+      observacao
+    };
+
+    itensPedido.push(item);
+    document.getElementById('pedido-quantidade').value = 1;
+    document.getElementById('pedido-desconto').value = 0;
+    document.getElementById('pedido-valor-pago').value = 0;
+    document.getElementById('pedido-observacao').value = '';
+    atualizarTotaisPedido();
+    renderTabela();
+  };
+
+  function renderTabela() {
+    tabela.innerHTML = '';
+    itensPedido.forEach((item, index) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${item.produto}</td>
+        <td>${item.quantidade}</td>
+        <td>${item.desconto}</td>
+        <td>${item.valorPago}</td>
+        <td>${item.valorTotal.toFixed(2)}</td>
+        <td>${item.formaPagamento}</td>
+        <td>${item.observacao}</td>
+        <td><button class="remove-item" onclick="removerItem(${index})">X</button></td>
+      `;
+      tabela.appendChild(tr);
+    });
+  }
+
+  function removerItem(index) {
+    itensPedido.splice(index, 1);
+    renderTabela();
+  }
+
+  document.getElementById('btn-concluir').onclick = async () => {
+    const nome = document.querySelector('[name=nome]').value;
+    const telefone = document.querySelector('[name=telefone]').value;
+    const email = document.querySelector('[name=email]').value;
+
+    if (!itensPedido.length) return alert('Adicione ao menos um item ao pedido.');
+
+    const response = await fetch('/registrar-pedido', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nome, telefone, email,
+        dataEntrega: document.getElementById('data-entrega').value,
+        itens: itensPedido
+      })
+    });
+
+    const res = await response.text();
+    alert(res);
+    window.location.reload();
+  };
+
+
+  const totalSpanPedido = document.getElementById('pedido-total');
+  const totalComDescontoSpanPedido = document.getElementById('pedido-total-desconto');
+  const totalApagarSpan = document.getElementById('totalApagar');
+  const camposDinamicos = [
+    document.getElementById('pedido-produto'),
+    document.getElementById('pedido-quantidade'),
+    document.getElementById('pedido-desconto'),
+    document.getElementById('pedido-valor-pago')
+  ];
+
+  function atualizarTotaisPedido() {
+    const produtoSel = document.getElementById('pedido-produto').selectedOptions[0];
+    const preco = parseFloat(produtoSel.dataset.preco.replace('R$ ', '') || 0);
+    const quantidade = parseInt(document.getElementById('pedido-quantidade').value || 1);
+    const desconto = parseFloat(document.getElementById('pedido-desconto').value || 0);
+    const valorPago = parseFloat(document.getElementById('pedido-valor-pago').value || 0);
+
+    const total = preco * quantidade;
+    const totalComDesconto = total - desconto;
+    const totalAPagar = totalComDesconto - valorPago;
+
+    totalSpanPedido.innerText = total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+    totalComDescontoSpanPedido.innerText = (totalComDesconto >= 0 ? totalComDesconto : 0).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+    totalApagarSpan.innerText = (totalAPagar >= 0 ? totalAPagar : 0).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+  }
+
+  camposDinamicos.forEach(campo => campo.addEventListener('input', atualizarTotaisPedido));
+
+  // Inicializar
+  atualizarTotaisPedido();
+</script>
+
+</body>
+</html>

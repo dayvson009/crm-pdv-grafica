@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PDV</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('partials/sidebar') %>
+
+  <div style="padding: 20px; margin-left: 210px;">
+    <h2 class="title-page">Vendas</h2>
+    <div id="modo-venda" style="display: flex; gap:20px;">
+      <form action="/registrar-venda" class="form-vendas" method="POST">
+        <div>
+          <div style="display: flex;">
+            <div>
+              <label>Produto:</label>
+              <select name="produto" id="produto">
+                <% produtos.forEach(p => { %>
+                  <option value="<%= p.nome %>" data-preco="<%= p.preco.replace(',', '.') %>"><%= p.nome %></option>
+                <% }) %>
+              </select>
+            </div>
+            <div>
+              <label>Quantidade:</label>
+              <input type="number" name="quantidade" id="quantidade" value="1" min="1" required style="width: 90px;text-align: center;">
+            </div>
+          </div>
+          <div style="display: flex;">
+            <div>
+              <label>Valor Pago (R$):</label>
+              <input type="text" step="0.01" name="valorPago" id="valorPago" placeholder="0" style="text-align: right;max-width: 90px;">
+            </div>
+            <div>
+              <label>Desconto (R$):</label>
+              <input type="text" step="0.01" name="desconto" id="desconto" placeholder="0" style="text-align: right;max-width: 90px;">
+            </div>
+            <div>
+              <label>Status:</label>
+              <select name="status">
+                <option>Orçamentos</option>
+                <option>Pedidos</option>
+                <option>Arte</option>
+                <option>Produção</option>
+                <option>Expedição</option>
+                <option>Entregue</option>
+              </select>
+            </div>
+          </div>
+          <div style="display: flex;">
+            <div>
+              <label>Forma de Pagamento:</label>
+              <select name="formaPagamento">
+                <option>Pendente Pagamento</option>
+                <option>Cartão</option>
+                <option>Dinheiro</option>
+                <option>Pix</option>
+              </select>
+            </div>
+            <div>
+              <label>Observação:</label>
+              <input type="text" name="observacao">
+            </div>
+          </div>
+          <div style="display: flex; gap: 20px;">
+            <button type="submit">Registrar</button>
+            <button type="reset">Cancelar</button>
+          </div>
+        </div>
+      </form>
+      <div>
+        <div class="card-value"><strong>Total</strong> <span id="total">0.00</span></div>
+        <div class="card-value"><strong>Total com desconto</strong> <span id="totalComDesconto">0.00</span></div>
+        <div class="card-value"><strong>Valor Restante</strong> <span id="totalApagar">0.00</span></div>
+      </div>
+    </div>
+  </div>
+<script>
+  const produtoSelect = document.getElementById('produto');
+  const quantidadeInput = document.getElementById('quantidade');
+  const descontoInput = document.getElementById('desconto');
+  const valorPagoInput = document.getElementById('valorPago');
+  const totalSpan = document.getElementById('total');
+  const totalComDescontoSpan = document.getElementById('totalComDesconto');
+  const totalApagarSpan = document.getElementById('totalApagar');
+
+  function calcularTotal() {
+    const preco = parseFloat(produtoSelect.selectedOptions[0].dataset.preco.replace("R$ ", "") || 0);
+    const quantidade = parseInt(quantidadeInput.value) || 0;
+    const desconto = parseFloat(descontoInput.value.replace(",",".")) || 0;
+    const valPago = parseFloat(valorPago.value.replace(",",".")) || 0;
+    const total = preco * quantidade;
+    const totalDescontado = total - desconto;
+    const totalAPagar = totalDescontado - valPago;
+
+    totalSpan.innerText = total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+    totalComDescontoSpan.innerText = (totalDescontado >= 0 ? totalDescontado : 0).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+    totalApagarSpan.innerText = (totalAPagar >= 0 ? totalAPagar : 0).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+  }
+
+  produtoSelect.addEventListener('change', calcularTotal);
+  quantidadeInput.addEventListener('input', calcularTotal);
+  descontoInput.addEventListener('input', calcularTotal);
+  valorPagoInput.addEventListener('input', calcularTotal);
+
+  // Inicializar valores
+  calcularTotal();
+</script>
+
+</body>
+</html>
