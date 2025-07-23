@@ -16,7 +16,6 @@ exports.registrarVenda = async (req, res) => {
     const data = dayjs().format('YYYY-MM-DD HH:mm:ss');
     const novoID = await sheets.getNovoIDPedido();
     const linha = await sheets.getProximaLinha();
-    console.log(`Registro de Linha: ${linha}`)
 
     const {
       produto,
@@ -33,10 +32,10 @@ exports.registrarVenda = async (req, res) => {
 
     // Deixa as colunas com fórmula vazias
     await sheets.addVenda([
-      data, loja, novoID, produto, qtd, `=SEERRO(PROCV(D${linha};Produtos!A:D;2;0)*E${linha};0)`, `=SEERRO(PROCV(D${linha};Produtos!A:D;3;0)*E${linha};0)`, desconto, valorPago, `=I${linha}-(G${linha}-H${linha})`, formaPagamento, status, observacao
+      data, loja, novoID, produto, qtd, `=SEERRO(PROCV(D${linha};Produtos!A:D;2;0)*E${linha};0)`, `=SEERRO(PROCV(D${linha};Produtos!A:D;3;0)*E${linha};0)`, desconto, valorPago, `=G${linha}-(I${linha}+H${linha})`, formaPagamento, status, observacao
     ]);
 
-    res.status(200).json({ message: 'Pedido registrado com sucesso!' });
+    res.status(200).json({ message: 'Venda registrado com sucesso!' });
 
   } catch (error) {
       console.error('Erro ao registrar venda:', error);
@@ -47,7 +46,7 @@ exports.registrarVenda = async (req, res) => {
 
 exports.registrarPedido = async (req, res) => {
   try {
-    const { nome, telefone, email, dataEntrega, itens } = req.body;
+    const { nome, loja, telefone, email, dataEntrega, itens } = req.body;
 
     if (!nome || !telefone || !itens || !Array.isArray(itens) || itens.length === 0) {
       return res.status(400).send('Dados inválidos');
@@ -70,6 +69,7 @@ exports.registrarPedido = async (req, res) => {
 
       return [
         dataHora,
+        loja,
         novoID,
         item.produto,
         item.quantidade,
@@ -77,7 +77,7 @@ exports.registrarPedido = async (req, res) => {
         `=SEERRO(PROCV(D${linha};Produtos!A:D;3;0)*E${linha};0)`, // Valor Total (idem)
         item.desconto,
         item.valorPago,
-        `=I${linha}-(G${linha}-H${linha})`, // Valor Restante (cálculo automático)
+        `=G${linha}-(I${linha}+H${linha})`, // Valor Restante (cálculo automático)
         item.formaPagamento,
         'Pedidos',
         item.observacao || ''
@@ -89,6 +89,7 @@ exports.registrarPedido = async (req, res) => {
     // 2. Registrar resumo na aba "Pedidos"
     const resumoPedido = [
       dataHora,
+      loja,
       novoID,
       nome,
       telefone,
@@ -96,18 +97,17 @@ exports.registrarPedido = async (req, res) => {
       descontoTotal,
       valorTotal,
       valorPagoTotal,
-      `=H${linhaPedidos}-(F${linhaPedidos}-G${linhaPedidos})`, // Valor Restante será calculado na planilha
+      `=H${linhaPedidos}-(G${linhaPedidos}+I${linhaPedidos})`, // Valor Restante será calculado na planilha
       dataEntrega || '',
       'Pedidos',
       '' // Observação
     ];
-
     await sheets.addPedido(resumoPedido);
 
-    res.status(200).send('Pedido registrado com sucesso!');
+    res.status(200).json({ message: 'Pedido registrado com sucesso!' });
   } catch (err) {
     console.error('Erro ao registrar pedido:', err);
-    res.status(500).send('Erro interno ao registrar pedido.');
+    res.status(500).json({ message: 'Erro interno do servidor ao registrar pedido.' });
   }
 };
 
@@ -146,10 +146,12 @@ exports.getItensDoPedido = async (req, res) => {
 };
 
 exports.editarPedido = async (req, res) => {
-  const { id, itens, pago, dataEntrega, observacao } = req.body;
+  const { id, pago, dataEntrega, observacao } = req.body;
+
+  const status = sheets.getItensDoPedido(id).status;
 
   try {
-    await sheets.atualizarPedidoCompleto(id, itens, pago, dataEntrega, observacao);
+    await sheets.atualizarPedidoCompleto(id, pago, dataEntrega, status, observacao);
     res.send('Pedido atualizado com sucesso');
   } catch (e) {
     console.error('Erro ao editar pedido:', e);

@@ -4,6 +4,27 @@
   <title>Dashboard - CRM Pedidos</title>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    td{
+      background-color: #fff;
+      padding: 5px;
+      padding: 15px;
+    }
+
+    .close {
+      background-color: #ff7373;
+      border: none;
+      border-radius: 5px;
+      margin: -5px 0 14px auto;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      display: block;
+      border-radius: 30px;
+      width: 35px;
+      height: 35px;
+    }
+  </style>
 </head>
 <body>
   <%- include('partials/sidebar') %>
@@ -19,7 +40,10 @@
             <% (porStatus[status] || []).forEach(p => { %>
               <div class="card" data-id="<%= p.id %>" onclick="abrirPopup(<%= JSON.stringify(p) %>)">
                 <strong>#<%= p.id %></strong> - <%= p.nome %>
-                <small>R$ <%= p.total %> | Pago: R$ <%= p.pago %></small>
+                <br />
+                <small>Total: <%= p.total %></small>
+                <br />
+                <small>Pagou: R$ <%= p.pago %></small>
               </div>
             <% }) %>
           </div>
@@ -60,10 +84,11 @@
       // Buscar itens da aba Vendas com mesmo Nº Pedido
       const res = await fetch('/itens-do-pedido?id=' + pedido.id);
       const itens = await res.json();
-      console.log(pedido)
+      
       popup.innerHTML = `
+      <button onclick="document.getElementById('popup').style.display='none'" class="buttons close">X</button>
         <div style="display: flex; justify-content: space-between;">
-          <h3>Pedido #${pedido.id}</h3>
+          <h3>Pedido #${pedido.id} - ${pedido.loja}</h3>
           <div>
             <label>Data de Entrega:</label>
             <input type="date" id="editar-data" value="${pedido.dataEntrega || ''}">
@@ -81,89 +106,49 @@
             <p><strong>Valor Total:</strong> <span>${pedido.total}</span></p>
             <p><strong>Desconto:</strong> <span>${pedido.desconto}</span></p>
             <div>
-              <p><strong>Valor Pago:</strong> <span>${pedido.pago}</span></p>
+              <label>Valor Pago: <input type="text" id="editar-pago" value="${pedido.pago.replace('R$ ','')}" style="width: 90px; font-size: 1em; text-align: right;"></label>
             </div>
             <p><strong>Valor Restante:</strong> <span>${pedido.restante}</span></p>
             
           </div>
           <div class="client">
             <label>Observação:</label>
-            <textarea type="text" id="editar-obs" value="${pedido.observacao || ''}" style="min-height: 50px;"></textarea>
+            <textarea type="text" id="editar-obs" value="" style="min-height: 90px;">${pedido.observacao || ''}</textarea>
           </div>
         </div>
 
         <h4 class="division">Itens do Pedido</h4>
         <table id="tabela-editar-itens">
           <thead>
-            <tr><th>Produto</th><th>Qtd</th><th>Desconto</th><th>Valor Pago</th><th>Forma</th><th>Obs</th><th></th></tr>
+            <tr><th>Produto</th><th>Qtd</th><th>Desconto</th><th>Valor Pago</th><th>Forma</th><th>Obs</th></tr>
           </thead>
           <tbody>
             ${itens.map((item, i) => `
+              ${console.log(item)}
               <tr>
-                <td><input value="${item.produto}"></td>
-                <td><input type="number" value="${item.qtd}" style="width: 60px;"></td>
-                <td><input type="text" value="${item.desconto}" style="width: 100px;"></td>
-                <td><input type="text" value="${item.valorPago}" style="width: 100px;"></td>
-                <td><input value="${item.formaPagamento}"></td>
-                <td><input value="${item.observacao}"></td>
-                <td><button onclick="removerLinha(${i})" class="remove">
-                    <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="15" height="15" viewBox="0 0 30 30" fill="#fff">
-                        <path d="M 14.984375 2.4863281 A 1.0001 1.0001 0 0 0 14 3.5 L 14 4 L 8.5 4 A 1.0001 1.0001 0 0 0 7.4863281 5 L 6 5 A 1.0001 1.0001 0 1 0 6 7 L 24 7 A 1.0001 1.0001 0 1 0 24 5 L 22.513672 5 A 1.0001 1.0001 0 0 0 21.5 4 L 16 4 L 16 3.5 A 1.0001 1.0001 0 0 0 14.984375 2.4863281 z M 6 9 L 7.7929688 24.234375 C 7.9109687 25.241375 8.7633438 26 9.7773438 26 L 20.222656 26 C 21.236656 26 22.088031 25.241375 22.207031 24.234375 L 24 9 L 6 9 z"></path>
-                    </svg>
-                  </button>
-                </td>
+                <td>${item.produto}</td>
+                <td>${item.qtd}</td>
+                <td>${item.desconto}</td>
+                <td>${item.valorPago}</td>
+                <td>${item.formaPagamento}</td>
+                <td>${item.observacao}</td>
               </tr>
             `).join('')}
           </tbody>
         </table>
-        <button onclick="adicionarLinha()" class="buttons">+ Adicionar Item</button>
         
-        <button onclick="salvarAlteracoes()" class="buttons">💾 Salvar Alterações</button>
-        <button onclick="document.getElementById('popup').style.display='none'" class="buttons">Cancelar</button>
+       <button onclick="salvarAlteracoes()" class="buttons">💾 Salvar Alterações</button>
       `;
       popup.style.display = 'block';
     }
 
-    function adicionarLinha() {
-      const tabela = document.querySelector('#tabela-editar-itens tbody');
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><input></td>
-        <td><input type="number" value="1"></td>
-        <td><input type="number" value="0"></td>
-        <td><input type="number" value="0"></td>
-        <td><input></td>
-        <td><input></td>
-        <td><button onclick="this.closest('tr').remove()">X</button></td>
-      `;
-      tabela.appendChild(tr);
-    }
-
-    function removerLinha(index) {
-      document.querySelectorAll('#tabela-editar-itens tbody tr')[index].remove();
-    }
-
     async function salvarAlteracoes() {
-      const linhas = document.querySelectorAll('#tabela-editar-itens tbody tr');
-      const itens = [...linhas].map(tr => {
-        const inputs = tr.querySelectorAll('input');
-        return {
-          produto: inputs[0].value,
-          quantidade: parseInt(inputs[1].value),
-          desconto: parseFloat(inputs[2].value),
-          valorPago: parseFloat(inputs[3].value),
-          formaPagamento: inputs[4].value,
-          observacao: inputs[5].value
-        };
-      });
 
       const payload = {
         id: pedidoAtual.id,
         pago: parseFloat(document.getElementById('editar-pago').value),
-        restante: parseFloat(document.getElementById('editar-restante').value),
         dataEntrega: document.getElementById('editar-data').value,
         observacao: document.getElementById('editar-obs').value,
-        itens
       };
 
       const res = await fetch('/editar-pedido', {
@@ -179,6 +164,7 @@
         alert('Erro ao salvar alterações.');
       }
     }
+
   </script>
 </body>
 </html>

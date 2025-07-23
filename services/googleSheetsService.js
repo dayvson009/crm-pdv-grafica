@@ -63,7 +63,6 @@ exports.getProximaLinha = async () => {
     range: 'Vendas!A2:A',
   });
   const linhas = res.data.values?.length || 0;
-  console.log("Linhas"+linhas)
   return linhas + 2; // +2 porque começa da linha 2
 };
 
@@ -74,7 +73,6 @@ exports.getProximaLinhaPedidos = async () => {
     range: 'Pedidos!A2:A',
   });
   const linhas = res.data.values?.length || 0;
-  console.log("Linhas"+linhas)
   return linhas + 2; // +2 porque começa da linha 2
 };
 
@@ -105,24 +103,25 @@ exports.getPedidos = async () => {
   const sheets = await authSheets();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'Pedidos!A2:L',
+    range: 'Pedidos!A2:M',
   });
 
   const linhas = res.data.values || [];
 
   return linhas.map((linha) => ({
     dataHora: linha[0],
-    id: linha[1],
-    nome: linha[2],
-    telefone: linha[3],
-    email: linha[4],
-    desconto: linha[5],
-    total: linha[6],
-    pago: linha[7],
-    restante: linha[8],
-    dataEntrega: linha[9],
-    status: linha[10],
-    observacao: linha[11],
+    loja: linha[1],
+    id: linha[2],
+    nome: linha[3],
+    telefone: linha[4],
+    email: linha[5],
+    desconto: linha[6],
+    total: linha[7],
+    pago: linha[8],
+    restante: linha[9],
+    dataEntrega: linha[10],
+    status: linha[11],
+    observacao: linha[12],
   }));
 };
 
@@ -141,7 +140,7 @@ exports.atualizarStatusPedido = async (id, novoStatus) => {
   const linhaDestino = index + 2;
   await sheets.spreadsheets.values.update({
     spreadsheetId,
-    range: `Pedidos!K${linhaDestino}`,
+    range: `Pedidos!L${linhaDestino}`,
     valueInputOption: 'USER_ENTERED',
     resource: { values: [[novoStatus]] }
   });
@@ -151,30 +150,32 @@ exports.getItensDoPedido = async (idPedido) => {
   const sheets = await authSheets();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'Vendas!A2:L',
+    range: 'Vendas!A2:M',
   });
 
   const dados = res.data.values || [];
 
   return dados
-    .filter(l => l[1] == idPedido)
+    .filter(l => l[2] == idPedido)
     .map(l => ({
-      produto: l[2],
-      qtd: parseInt(l[3]),
-      desconto: parseFloat(l[6]),
-      valorPago: parseFloat(l[7]),
-      formaPagamento: l[9],
-      observacao: l[11]
+      loja: l[1],
+      produto: l[3],
+      qtd: parseInt(l[4]),
+      desconto: (l[7]),
+      valorPago: (l[8]),
+      formaPagamento: l[10],
+      status: l[11],
+      observacao: l[12]
     }));
 };
 
-exports.atualizarPedidoCompleto = async (id, itens, pago, entrega, obs) => {
+exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
   const sheets = await authSheets();
 
   // Apagar linhas antigas da aba Vendas com esse ID
   const resV = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'Vendas!A2:L',
+    range: 'Vendas!A2:M',
   });
 
   const valores = resV.data.values || [];
@@ -184,23 +185,9 @@ exports.atualizarPedidoCompleto = async (id, itens, pago, entrega, obs) => {
   for (let linha of linhasApagar) {
     await sheets.spreadsheets.values.clear({
       spreadsheetId,
-      range: `Vendas!A${linha.index}:L${linha.index}`
+      range: `Vendas!A${linha.index}:M${linha.index}`
     });
   }
-
-  // Inserir novamente os itens
-  const dataHora = dayjs().format('YYYY-MM-DD HH:mm:ss');
-  const novasLinhas = itens.map(item => [
-    dataHora, id, item.produto, item.quantidade, '', '', item.desconto,
-    item.valorPago, '', item.formaPagamento, 'Pedidos', item.observacao || ''
-  ]);
-
-  await sheets.spreadsheets.values.append({
-    spreadsheetId,
-    range: 'Vendas!A2',
-    valueInputOption: 'USER_ENTERED',
-    resource: { values: novasLinhas }
-  });
 
   // Atualizar aba Pedidos
   const resP = await sheets.spreadsheets.values.get({
@@ -215,10 +202,10 @@ exports.atualizarPedidoCompleto = async (id, itens, pago, entrega, obs) => {
   const linhaDestino = index + 2;
   await sheets.spreadsheets.values.update({
     spreadsheetId,
-    range: `Pedidos!H${linhaDestino}:L${linhaDestino}`,
+    range: `Pedidos!I${linhaDestino}:M${linhaDestino}`,
     valueInputOption: 'USER_ENTERED',
     resource: {
-      values: [[pago, '', entrega || '', 'Pedidos', obs || '']]
+      values: [[pago, `=H${linhaDestino}-(I${linhaDestino}+G${linhaDestino})`, entrega || '', status, obs || '']]
     }
   });
 };
