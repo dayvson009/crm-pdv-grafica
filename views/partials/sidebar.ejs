@@ -1,7 +1,11 @@
 <div class="sidebar">
   <img src="./images/logo-devgraphic.jpg" class="logo">
   <ul>
-    <li class="<%= currentPage === 'pdvVendas' ? 'active' : '' %>"><a href="/">Vendas</a></li>
+    <li class="<%= currentPage === 'pdvVendas' ? 'active' : '' %>"><a href="#">Vendas</a></li>
+    <ul id="menu-lojas">
+        <li class="menu-item" id="menu-loja1" style="width: 89%;margin: 0 0 0 auto;"><a href="/#loja1" >Loja1</a></li>
+        <li class="menu-item" id="menu-loja2" style="width: 89%;margin: 0 0 0 auto;"><a href="/#loja2" >Loja2</a></li>
+    </ul>
     <li class="<%= currentPage === 'pdvPedidos' ? 'active' : '' %>"><a href="/pdv">Novo Pedido</a></li>
     <li class="<%= currentPage === 'painelpedidos' ? 'active' : '' %>"><a href="/painelpedidos">Painel de Pedidos</a></li>
     <li class="<%= currentPage === 'avisos' ? 'active' : '' %>"><a href="/avisos">Avisos</a></li>

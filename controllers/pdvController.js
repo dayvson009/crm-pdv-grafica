@@ -12,28 +12,36 @@ exports.renderPdvPedidos = async (req, res) => {
 };
 
 exports.registrarVenda = async (req, res) => {
-  const data = dayjs().format('YYYY-MM-DD HH:mm:ss');
-  const novoID = await sheets.getNovoIDPedido();
-  const linha = await sheets.getProximaLinha();
+  try {
+    const data = dayjs().format('YYYY-MM-DD HH:mm:ss');
+    const novoID = await sheets.getNovoIDPedido();
+    const linha = await sheets.getProximaLinha();
+    console.log(`Registro de Linha: ${linha}`)
 
-  const {
-    produto,
-    quantidade,
-    desconto,
-    valorPago,
-    formaPagamento,
-    status,
-    observacao
-  } = req.body;
+    const {
+      produto,
+      quantidade,
+      desconto,
+      valorPago,
+      formaPagamento,
+      status,
+      observacao,
+      loja
+    } = req.body;
 
-  const qtd = parseInt(quantidade);
+    const qtd = parseInt(quantidade);
 
-  // Deixa as colunas com fórmula vazias
-  await sheets.addVenda([
-    data, novoID, produto, qtd, `=SEERRO(PROCV(C${linha};Produtos!A:D;2;0)*D${linha};0)`, `=SEERRO(PROCV(C${linha};Produtos!A:D;3;0)*D${linha};0)`, desconto, valorPago, `=H${linha}-(F${linha}-G${linha})`, formaPagamento, status, observacao
-  ]);
+    // Deixa as colunas com fórmula vazias
+    await sheets.addVenda([
+      data, loja, novoID, produto, qtd, `=SEERRO(PROCV(D${linha};Produtos!A:D;2;0)*E${linha};0)`, `=SEERRO(PROCV(D${linha};Produtos!A:D;3;0)*E${linha};0)`, desconto, valorPago, `=I${linha}-(G${linha}-H${linha})`, formaPagamento, status, observacao
+    ]);
 
-  res.redirect('/');
+    res.status(200).json({ message: 'Pedido registrado com sucesso!' });
+
+  } catch (error) {
+      console.error('Erro ao registrar venda:', error);
+      res.status(500).json({ message: 'Erro interno do servidor ao registrar pedido.' });
+  }
 };
 
 
@@ -48,7 +56,7 @@ exports.registrarPedido = async (req, res) => {
     const dataHora = dayjs().format('YYYY-MM-DD HH:mm:ss');
     const novoID = await sheets.getNovoIDPedido();
     const linha = await sheets.getProximaLinha();
-    const linhaPedidos = await sheets.getProximaLinha();
+    const linhaPedidos = await sheets.getProximaLinhaPedidos();
 
     let valorTotal = 0;
     let valorPagoTotal = 0;
@@ -65,11 +73,11 @@ exports.registrarPedido = async (req, res) => {
         novoID,
         item.produto,
         item.quantidade,
-        `=SEERRO(PROCV(C${linha};Produtos!A:D;2;0)*D${linha};0)`, // Custo (cálculo automático na planilha)
-        `=SEERRO(PROCV(C${linha};Produtos!A:D;3;0)*D${linha};0)`, // Valor Total (idem)
+        `=SEERRO(PROCV(D${linha};Produtos!A:D;2;0)*E${linha};0)`, // Custo (cálculo automático na planilha)
+        `=SEERRO(PROCV(D${linha};Produtos!A:D;3;0)*E${linha};0)`, // Valor Total (idem)
         item.desconto,
         item.valorPago,
-        `=H${linha}-(F${linha}-G${linha})`, // Valor Restante (cálculo automático)
+        `=I${linha}-(G${linha}-H${linha})`, // Valor Restante (cálculo automático)
         item.formaPagamento,
         'Pedidos',
         item.observacao || ''

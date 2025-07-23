@@ -45,7 +45,7 @@ exports.getNovoIDPedido = async () => {
   const sheets = await authSheets();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'Vendas!B2:B',
+    range: 'Vendas!C2:C',
   });
 
   const valores = res.data.values || [];
@@ -55,25 +55,26 @@ exports.getNovoIDPedido = async () => {
   return ultimoID + 1;
 };
 
+
 exports.getProximaLinha = async () => {
   const sheets = await authSheets();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
     range: 'Vendas!A2:A',
   });
-
   const linhas = res.data.values?.length || 0;
+  console.log("Linhas"+linhas)
   return linhas + 2; // +2 porque começa da linha 2
 };
 
-exports.getProximaLinha = async () => {
+exports.getProximaLinhaPedidos = async () => {
   const sheets = await authSheets();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
     range: 'Pedidos!A2:A',
   });
-
   const linhas = res.data.values?.length || 0;
+  console.log("Linhas"+linhas)
   return linhas + 2; // +2 porque começa da linha 2
 };
 
@@ -129,7 +130,7 @@ exports.atualizarStatusPedido = async (id, novoStatus) => {
   const sheets = await authSheets();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'Pedidos!B2:B',
+    range: 'Pedidos!C2:C',
   });
 
   const linhas = res.data.values || [];
@@ -204,7 +205,7 @@ exports.atualizarPedidoCompleto = async (id, itens, pago, entrega, obs) => {
   // Atualizar aba Pedidos
   const resP = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'Pedidos!B2:B',
+    range: 'Pedidos!C2:C',
   });
 
   const linhas = resP.data.values || [];

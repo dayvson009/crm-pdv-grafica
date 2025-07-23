@@ -10,8 +10,14 @@
   <div style="padding: 20px; margin-left: 210px;">
     <h2 class="title-page">Vendas</h2>
     <div id="modo-venda" style="display: flex; gap:20px;">
-      <form action="/registrar-venda" class="form-vendas" method="POST">
+      <form action="/registrar-venda" class="form-vendas" id="form-registro-venda" method="POST">
         <div>
+          <div style="display: flex;">
+            <input type="radio" id="loja1" name="loja" value="loja1">
+            <label for="loja1">LOJA1</label><br>
+            <input type="radio" id="loja2" name="loja" value="loja2">
+            <label for="loja2">LOJA2</label><br>
+          </div>
           <div style="display: flex;">
             <div>
               <label>Produto:</label>
@@ -38,12 +44,8 @@
             <div>
               <label>Status:</label>
               <select name="status">
-                <option>Orçamentos</option>
-                <option>Pedidos</option>
-                <option>Arte</option>
-                <option>Produção</option>
-                <option>Expedição</option>
                 <option>Entregue</option>
+                <option>Expedição</option>
               </select>
             </div>
           </div>
@@ -68,6 +70,10 @@
           </div>
         </div>
       </form>
+      <div id="loading-indicator">
+        <div class="spinner"></div>
+        <p style="margin-left: 20px;">Processando...</p>
+      </div>
       <div>
         <div class="card-value"><strong>Total</strong> <span id="total">0.00</span></div>
         <div class="card-value"><strong>Total com desconto</strong> <span id="totalComDesconto">0.00</span></div>
@@ -75,7 +81,53 @@
       </div>
     </div>
   </div>
+  <div id="notification-container"></div>
 <script>
+    // Active do Menu
+
+    const menuItems = document.querySelectorAll('#menu-lojas .menu-item');
+    const radioButtons = document.querySelectorAll('input[name="loja"]');
+
+    function applyHashEffects() {
+        const hash = window.location.hash.substring(1); // Pega o hash e remove o '#'
+
+        // 1. Lógica para a classe 'active' no LI do menu
+        menuItems.forEach(item => {
+            item.classList.remove('active'); // Remove a classe de todos primeiro
+            const anchor = item.querySelector('a');
+            if (anchor && anchor.href.includes(`#${hash}`)) {
+                item.classList.add('active'); // Adiciona a classe se o link corresponder ao hash
+            }
+        });
+
+        // 2. Lógica para selecionar o input radio
+        radioButtons.forEach(radio => {
+            if (radio.value === hash) {
+                radio.checked = true; // Marca o radio button se o valor corresponder ao hash
+            } else {
+                radio.checked = false; // Desmarca os outros
+            }
+        });
+    }
+
+    // Chama a função quando a página carrega
+    applyHashEffects();
+
+    // Adiciona um listener para quando o hash da URL muda (ex: o usuário clica em um link de hash)
+    window.addEventListener('hashchange', applyHashEffects);
+
+    // Opcional: Atualizar o hash quando um rádio é selecionado manualmente
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', (event) => {
+            window.location.hash = event.target.value;
+        });
+    });
+   
+    
+    // Regrinhas de valores
+
+
+
   const produtoSelect = document.getElementById('produto');
   const quantidadeInput = document.getElementById('quantidade');
   const descontoInput = document.getElementById('desconto');
@@ -83,6 +135,10 @@
   const totalSpan = document.getElementById('total');
   const totalComDescontoSpan = document.getElementById('totalComDesconto');
   const totalApagarSpan = document.getElementById('totalApagar');
+  const notificationContainer = document.getElementById('notification-container');
+
+  const loadingIndicator = document.getElementById('loading-indicator');
+  const body = document.body; // Para aplicar o estilo de opacidade
 
   function calcularTotal() {
     const preco = parseFloat(produtoSelect.selectedOptions[0].dataset.preco.replace("R$ ", "") || 0);
@@ -105,6 +161,95 @@
 
   // Inicializar valores
   calcularTotal();
+
+  // --- Funções de Controle do Loading ---
+  function showLoading() {
+      loadingIndicator.style.display = 'flex'; // Mostra o loading
+      body.classList.add('loading'); // Adiciona a classe para opacidade e desabilitar cliques
+  }
+
+  function hideLoading() {
+      loadingIndicator.style.display = 'none'; // Esconde o loading
+      body.classList.remove('loading'); // Remove a classe
+  }
+
+  // --- Função para Mostrar Notificação ---
+  function showNotification(message, type = 'success', duration = 3000) {
+      const notification = document.createElement('div');
+      notification.classList.add('notification');
+      notification.textContent = message;
+
+      if (type === 'error') {
+          notification.classList.add('error');
+      }
+
+      notificationContainer.prepend(notification); // Adiciona no início para novas notificações ficarem em cima
+
+      // Força o reflow para garantir que a transição funcione
+      void notification.offsetWidth;
+
+      notification.classList.add('show'); // Inicia a transição para mostrar
+
+      setTimeout(() => {
+          notification.classList.remove('show'); // Inicia a transição para esconder
+          // Remove o elemento do DOM após a transição de saída
+          notification.addEventListener('transitionend', () => {
+              notification.remove();
+          }, { once: true });
+      }, duration);
+  }
+
+  // Envio com Ajax
+  const form = document.getElementById('form-registro-venda');
+  // --- Envio do Formulário via AJAX ---
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault(); // Impede o envio padrão do formulário
+
+        showLoading(); // MOSTRA O INDICADOR DE LOADING
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        // Adiciona o valor da loja selecionada (do radio button)
+        const selectedLojaRadio = document.querySelector('input[name="loja"]:checked');
+        if (selectedLojaRadio) {
+            data.loja = selectedLojaRadio.value;
+        } else {
+            // Trate o caso em que nenhuma loja está selecionada, se necessário
+            showNotification('Por favor, selecione uma loja.', 'error'); // Notificação de erro
+            hideLoading(); // Esconde o loading em caso de erro de validação
+            return; // Aborta o envio
+        }
+
+        // O hash de retorno não precisa ser enviado para o backend se não for usado lá
+        // Mas se você quiser que o backend saiba, mantenha:
+        // data.hashRetorno = window.location.hash;
+
+        try {
+            const response = await fetch('/registrar-venda', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                const result = await response.json(); // Se o backend retornar JSON
+                showNotification(result.message || 'Venda registrada com sucesso!', 'success'); // Notificação de sucesso
+                form.reset(); // Limpa o formulário após o sucesso
+                // O hash da URL permanecerá o mesmo devido à natureza do AJAX.
+            } else {
+                const errorData = await response.json();
+                showNotification(errorData.message || 'Erro ao registrar Venda.', 'error'); // Notificação de erro
+            }
+        } catch (error) {
+            console.error('Erro de rede ou no servidor:', error);
+            showNotification('Erro de conexão ao registrar Venda.', 'error'); // Notificação de erro de conexão
+        } finally {
+            hideLoading(); // ESCONDE O INDICADOR DE LOADING SEMPRE, independentemente do sucesso/falha
+        }
+    });
 </script>
 
 </body>
