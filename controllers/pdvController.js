@@ -1,5 +1,15 @@
 const sheets = require('../services/googleSheetsService');
 const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+
+// Estenda os plugins Day.js
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+// Defina o fuso horário padrão para Recife
+// 'America/Recife' é o identificador IANA para o fuso horário de Recife (UTC-3).
+dayjs.tz.setDefault('America/Recife');
 
 exports.renderPdvVendas = async (req, res) => {
   const produtos = await sheets.getProdutos();
@@ -32,7 +42,7 @@ exports.registrarVenda = async (req, res) => {
 
     // Deixa as colunas com fórmula vazias
     await sheets.addVenda([
-      data, loja, novoID, produto, qtd, `=SEERRO(PROCV(D${linha};Produtos!A:D;2;0)*E${linha};0)`, `=SEERRO(PROCV(D${linha};Produtos!A:D;3;0)*E${linha};0)`, desconto, valorPago, `=G${linha}-(I${linha}+H${linha})`, formaPagamento, status, observacao
+      data, loja, novoID, produto, qtd, `=SEERRO(PROCV(D${linha};Produtos!A:D;2;0)*E${linha};0)`, `=SEERRO(PROCV(D${linha};Produtos!A:D;3;0)*E${linha};0)`, desconto, valorPago, `=I${linha}-(G${linha}+H${linha})`, formaPagamento, status, observacao
     ]);
 
     res.status(200).json({ message: 'Venda registrado com sucesso!' });
@@ -77,7 +87,7 @@ exports.registrarPedido = async (req, res) => {
         `=SEERRO(PROCV(D${linha};Produtos!A:D;3;0)*E${linha};0)`, // Valor Total (idem)
         item.desconto,
         item.valorPago,
-        `=G${linha}-(I${linha}+H${linha})`, // Valor Restante (cálculo automático)
+        `=I${linha}-(G${linha}+H${linha})`, // Valor Restante (cálculo automático)
         item.formaPagamento,
         'Pedidos',
         item.observacao || ''
@@ -96,8 +106,8 @@ exports.registrarPedido = async (req, res) => {
       email || '',
       descontoTotal,
       valorTotal,
-      valorPagoTotal,
-      `=H${linhaPedidos}-(G${linhaPedidos}+I${linhaPedidos})`, // Valor Restante será calculado na planilha
+      valorPagoTotal, 
+      `=I${linhaPedidos}-(G${linhaPedidos}+H${linhaPedidos})`, // Valor Restante será calculado na planilha
       dataEntrega || '',
       'Pedidos',
       '' // Observação

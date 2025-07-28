@@ -83,51 +83,6 @@
   </div>
   <div id="notification-container"></div>
 <script>
-    // Active do Menu
-
-    const menuItems = document.querySelectorAll('#menu-lojas .menu-item');
-    const radioButtons = document.querySelectorAll('input[name="loja"]');
-
-    function applyHashEffects() {
-        const hash = window.location.hash.substring(1); // Pega o hash e remove o '#'
-
-        // 1. Lógica para a classe 'active' no LI do menu
-        menuItems.forEach(item => {
-            item.classList.remove('active'); // Remove a classe de todos primeiro
-            const anchor = item.querySelector('a');
-            if (anchor && anchor.href.includes(`#${hash}`)) {
-                item.classList.add('active'); // Adiciona a classe se o link corresponder ao hash
-            }
-        });
-
-        // 2. Lógica para selecionar o input radio
-        radioButtons.forEach(radio => {
-            if (radio.value === hash) {
-                radio.checked = true; // Marca o radio button se o valor corresponder ao hash
-            } else {
-                radio.checked = false; // Desmarca os outros
-            }
-        });
-    }
-
-    // Chama a função quando a página carrega
-    applyHashEffects();
-
-    // Adiciona um listener para quando o hash da URL muda (ex: o usuário clica em um link de hash)
-    window.addEventListener('hashchange', applyHashEffects);
-
-    // Opcional: Atualizar o hash quando um rádio é selecionado manualmente
-    radioButtons.forEach(radio => {
-        radio.addEventListener('change', (event) => {
-            window.location.hash = event.target.value;
-        });
-    });
-   
-    
-    // Regrinhas de valores
-
-
-
   const produtoSelect = document.getElementById('produto');
   const quantidadeInput = document.getElementById('quantidade');
   const descontoInput = document.getElementById('desconto');

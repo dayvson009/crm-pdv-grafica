@@ -111,3 +111,11 @@
 * [ ] Puxar qual serviço mais é solicitado no mês
 * [ ] Qual é o carro chefe da empresa
 * [ ] O que devo focar mais e melhorar
+
+### Ajustes
+* [ ] Em PEDIDO, quando salva um valor com desconto, o valor total ta diminuindo mas não deveria, pq o total permanece imutavel.
+* [ ] Precisa colocar os itens como pago quando concluir o pedido, pq na venda fica os valores como pendente ainda
+* [ ] Dashboard de pedidos, remover undefined que fica em cima de Produto, e em valor pago colocar float, e observação se for vazio colocar "" e não undefined
+* [ ] Adicionar M² - Adicionar campo, na planilha de produtos adicionar a uma coluna chamada Unidade, pq pode ser "unidade ou m2", ele vai só calcular no valor total para registrar o pedido, e no back-end se houver m2 ele vai por na tabela o valor total do m² e não a formula que está programada. (adicionar campos Largura e Altura)
+* [x] Colocar tudo de volta num campo de venda só, sem ser loja 1 e loja 2 no menu
+* [ ] Ao registrar data hora colocar o Timezone -3
