@@ -1,6 +1,16 @@
 const { google } = require('googleapis');
 const creds = require('../credentials.json');
 const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+
+// Estenda os plugins Day.js
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+// Defina o fuso horário padrão para Recife
+// 'America/Recife' é o identificador IANA para o fuso horário de Recife (UTC-3).
+dayjs.tz.setDefault('America/Recife');
 
 const spreadsheetId = '1ivM3DzWckcM4wJda0gcXxbmsZyBWOfXTrgHsKBNhD0I';
 
@@ -205,7 +215,7 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
     range: `Pedidos!I${linhaDestino}:M${linhaDestino}`,
     valueInputOption: 'USER_ENTERED',
     resource: {
-      values: [[pago, `=I${linhaDestino}-(G${linhaDestino}+H${linhaDestino})`, entrega || '', status, obs || '']]
+      values: [[pago, `=I${linhaDestino}-(G${linhaDestino}-H${linhaDestino})`, entrega || '', status, obs || '']]
     }
   });
 };
@@ -234,7 +244,7 @@ exports.getAvisos = async () => {
 
 exports.salvarAviso = async ({ para, whatsapp, texto }) => {
   const sheets = await authSheets();
-  const dataHora = dayjs().format('YYYY-MM-DD HH:mm:ss');
+  const dataHora = dayjs.tz().format('DD-MM-YYYY HH:mm:ss');
 
   await sheets.spreadsheets.values.append({
     spreadsheetId,

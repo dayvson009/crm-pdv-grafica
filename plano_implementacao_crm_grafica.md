@@ -118,4 +118,7 @@
 * [ ] Dashboard de pedidos, remover undefined que fica em cima de Produto, e em valor pago colocar float, e observação se for vazio colocar "" e não undefined
 * [ ] Adicionar M² - Adicionar campo, na planilha de produtos adicionar a uma coluna chamada Unidade, pq pode ser "unidade ou m2", ele vai só calcular no valor total para registrar o pedido, e no back-end se houver m2 ele vai por na tabela o valor total do m² e não a formula que está programada. (adicionar campos Largura e Altura)
 * [x] Colocar tudo de volta num campo de venda só, sem ser loja 1 e loja 2 no menu
-* [ ] Ao registrar data hora colocar o Timezone -3
+* [x] Ao registrar data hora colocar o Timezone -3
+* [x] Quando registra um pedido com mais de um item ele pega a linha seguinte pra colocar na formula do valor do produto, Mas não ta pegando o próximo item, só o primeiro item, acho melhor ao registrar venda colocar o valor do pedido mesmo sem formula
+* [ ] No Pedido, é bom mostrar a soma dos itens no caso o total geral
+* [ ] No Dashboard, mostrar a data de entrega com uma tag (vermelha em atraso ou perto de vencer o prazo, amarela 2 dias antes de vencer), mas se tiver com status entregue não fica colorido

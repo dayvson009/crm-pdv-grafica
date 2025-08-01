@@ -23,7 +23,7 @@ exports.renderPdvPedidos = async (req, res) => {
 
 exports.registrarVenda = async (req, res) => {
   try {
-    const data = dayjs().format('YYYY-MM-DD HH:mm:ss');
+    const data = dayjs.tz().format('DD-MM-YYYY HH:mm:ss');
     const novoID = await sheets.getNovoIDPedido();
     const linha = await sheets.getProximaLinha();
 
@@ -42,7 +42,7 @@ exports.registrarVenda = async (req, res) => {
 
     // Deixa as colunas com fórmula vazias
     await sheets.addVenda([
-      data, loja, novoID, produto, qtd, `=SEERRO(PROCV(D${linha};Produtos!A:D;2;0)*E${linha};0)`, `=SEERRO(PROCV(D${linha};Produtos!A:D;3;0)*E${linha};0)`, desconto, valorPago, `=I${linha}-(G${linha}+H${linha})`, formaPagamento, status, observacao
+      data, loja, novoID, produto, qtd, `=SEERRO(PROCV(D${linha};Produtos!A:D;2;0)*E${linha};0)`, `=SEERRO(PROCV(D${linha};Produtos!A:D;3;0)*E${linha};0)`, desconto, valorPago, `=I${linha}-(G${linha}-H${linha})`, formaPagamento, status, observacao
     ]);
 
     res.status(200).json({ message: 'Venda registrado com sucesso!' });
@@ -62,7 +62,7 @@ exports.registrarPedido = async (req, res) => {
       return res.status(400).send('Dados inválidos');
     }
 
-    const dataHora = dayjs().format('YYYY-MM-DD HH:mm:ss');
+    const dataHora = dayjs.tz().format('DD-MM-YYYY HH:mm:ss');
     const novoID = await sheets.getNovoIDPedido();
     const linha = await sheets.getProximaLinha();
     const linhaPedidos = await sheets.getProximaLinhaPedidos();
@@ -72,22 +72,22 @@ exports.registrarPedido = async (req, res) => {
     let descontoTotal = 0;
 
     // 1. Registrar cada item na aba "Vendas"
-    const registrosVendas = itens.map(item => {
+    const registrosVendas = itens.map((item, index) => {
       valorTotal += item.valorTotal;
       valorPagoTotal += item.valorPago;
       descontoTotal += item.desconto;
-
+      
       return [
         dataHora,
         loja,
         novoID,
         item.produto,
         item.quantidade,
-        `=SEERRO(PROCV(D${linha};Produtos!A:D;2;0)*E${linha};0)`, // Custo (cálculo automático na planilha)
-        `=SEERRO(PROCV(D${linha};Produtos!A:D;3;0)*E${linha};0)`, // Valor Total (idem)
+        `=SEERRO(PROCV(D${linha+index};Produtos!A:D;2;0)*E${linha+index};0)`, // Custo (cálculo automático na planilha)
+        `=SEERRO(PROCV(D${linha+index};Produtos!A:D;3;0)*E${linha+index};0)`, // Valor Total (idem)
         item.desconto,
         item.valorPago,
-        `=I${linha}-(G${linha}+H${linha})`, // Valor Restante (cálculo automático)
+        `=I${linha+index}-(G${linha+index}-H${linha+index})`, // Valor Restante (cálculo automático)
         item.formaPagamento,
         'Pedidos',
         item.observacao || ''
@@ -107,7 +107,7 @@ exports.registrarPedido = async (req, res) => {
       descontoTotal,
       valorTotal,
       valorPagoTotal, 
-      `=I${linhaPedidos}-(G${linhaPedidos}+H${linhaPedidos})`, // Valor Restante será calculado na planilha
+      `=I${linhaPedidos}-(G${linhaPedidos}-H${linhaPedidos})`, // Valor Restante será calculado na planilha
       dataEntrega || '',
       'Pedidos',
       '' // Observação
