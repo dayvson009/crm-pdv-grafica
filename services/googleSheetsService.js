@@ -215,7 +215,7 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
     range: `Pedidos!I${linhaDestino}:M${linhaDestino}`,
     valueInputOption: 'USER_ENTERED',
     resource: {
-      values: [[pago, `=I${linhaDestino}-(G${linhaDestino}-H${linhaDestino})`, entrega || '', status, obs || '']]
+      values: [[pago, `=I${linhaDestino}-(H${linhaDestino}-G${linhaDestino})`, entrega || '', status, obs || '']]
     }
   });
 };

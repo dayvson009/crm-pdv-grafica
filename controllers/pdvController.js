@@ -107,7 +107,7 @@ exports.registrarPedido = async (req, res) => {
       descontoTotal,
       valorTotal,
       valorPagoTotal, 
-      `=I${linhaPedidos}-(G${linhaPedidos}-H${linhaPedidos})`, // Valor Restante será calculado na planilha
+      `=I${linhaPedidos}-(H${linhaPedidos}-G${linhaPedidos})`, // Valor Restante será calculado na planilha
       dataEntrega || '',
       'Pedidos',
       '' // Observação
