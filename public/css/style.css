@@ -276,6 +276,10 @@ body{
       color: #7e30d2;
     }
 
+    #tabela-editar-itens{
+      width: 100%;
+    }
+
     #tabela-editar-itens input {
       border: none;
       padding: 10px;

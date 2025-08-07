@@ -135,7 +135,10 @@ exports.dashboardPedidos = async (req, res) => {
     porStatus[status].push(p);
   });
 
-  res.render('painelpedidos', { porStatus, currentPage: 'painelpedidos' });
+  res.render('painelpedidos', { 
+    porStatus, 
+    currentPage: 'painelpedidos'
+  });
 };
 
 exports.atualizarStatusPedido = async (req, res) => {
@@ -158,9 +161,13 @@ exports.getItensDoPedido = async (req, res) => {
 exports.editarPedido = async (req, res) => {
   const { id, pago, dataEntrega, observacao } = req.body;
 
-  const status = sheets.getItensDoPedido(id).status;
-
   try {
+    // Buscar o status atual do pedido
+    // const itens = await sheets.getItensDoPedido(id);
+    // const status = itens.length > 0 ? itens[0].status : 'Pedidos';
+    const status = await sheets.getItensDoPedido(id).status;
+
+    // Chamar a função do service para atualizar o pedido
     await sheets.atualizarPedidoCompleto(id, pago, dataEntrega, status, observacao);
     res.send('Pedido atualizado com sucesso');
   } catch (e) {
