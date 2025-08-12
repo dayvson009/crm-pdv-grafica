@@ -135,6 +135,35 @@ exports.getPedidos = async () => {
   }));
 };
 
+exports.getPedidoPorID = async (id) => {
+  const sheets = await authSheets();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: 'Pedidos!A2:M',
+  });
+
+  const linhas = res.data.values || [];
+  const pedido = linhas.find(linha => String(linha[2]) === String(id));
+
+  if (!pedido) return null;
+
+  return {
+    dataHora: pedido[0],
+    loja: pedido[1],
+    id: pedido[2],
+    nome: pedido[3],
+    telefone: pedido[4],
+    email: pedido[5],
+    desconto: pedido[6],
+    total: pedido[7],
+    pago: pedido[8],
+    restante: pedido[9],
+    dataEntrega: pedido[10],
+    status: pedido[11],
+    observacao: pedido[12],
+  };
+};
+
 exports.atualizarStatusPedido = async (id, novoStatus) => {
   const sheets = await authSheets();
   const res = await sheets.spreadsheets.values.get({
@@ -171,8 +200,9 @@ exports.getItensDoPedido = async (idPedido) => {
       loja: l[1],
       produto: l[3],
       qtd: parseInt(l[4]),
-      desconto: (l[7]),
-      valorPago: (l[8]),
+      valorTotal: l[6] ? (typeof l[6] === 'string' ? parseFloat(l[6].replace(/[^\d.,]/g, '').replace(',', '.')) : parseFloat(l[6])) || 0 : 0,
+      desconto: l[7] ? (typeof l[7] === 'string' ? parseFloat(l[7].replace(/[^\d.,]/g, '').replace(',', '.')) : parseFloat(l[7])) || 0 : 0,
+      valorPago: l[8] ? (typeof l[8] === 'string' ? parseFloat(l[8].replace(/[^\d.,]/g, '').replace(',', '.')) : parseFloat(l[8])) || 0 : 0,
       formaPagamento: l[10],
       status: l[11],
       observacao: l[12] || ''
@@ -344,7 +374,7 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
   for (let item of itensAtualizados) {
     try {
       await sheets.spreadsheets.values.update({
-        spreadsheetId,
+      spreadsheetId,
         range: `Vendas!I${item.linha}`,
         valueInputOption: 'USER_ENTERED',
         resource: {

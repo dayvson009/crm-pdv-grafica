@@ -56,7 +56,7 @@ exports.registrarVenda = async (req, res) => {
 
 exports.registrarPedido = async (req, res) => {
   try {
-    const { nome, loja, telefone, email, dataEntrega, itens } = req.body;
+    const { nome, loja, telefone, email, dataEntrega, itens, observacaoGeral } = req.body;
 
     if (!nome || !telefone || !itens || !Array.isArray(itens) || itens.length === 0) {
       return res.status(400).send('Dados inválidos');
@@ -73,9 +73,17 @@ exports.registrarPedido = async (req, res) => {
 
     // 1. Registrar cada item na aba "Vendas"
     const registrosVendas = itens.map((item, index) => {
-      valorTotal += item.valorTotal;
-      valorPagoTotal += item.valorPago;
-      descontoTotal += item.desconto;
+      // Garantir que os valores sejam números
+      const desconto = parseFloat(item.desconto) || 0;
+      const valorPago = parseFloat(item.valorPago) || 0;
+      const valorTotalItem = parseFloat(item.valorTotal) || 0;
+      
+      // Calcular o valor total bruto (antes do desconto) para este item
+      const valorTotalBrutoItem = valorTotalItem + desconto;
+      
+      valorTotal += valorTotalBrutoItem; // Agora é o total bruto
+      valorPagoTotal += valorPago;
+      descontoTotal += desconto;
       
       return [
         dataHora,
@@ -85,8 +93,8 @@ exports.registrarPedido = async (req, res) => {
         item.quantidade,
         `=SEERRO(PROCV(D${linha+index};Produtos!A:D;2;0)*E${linha+index};0)`, // Custo (cálculo automático na planilha)
         `=SEERRO(PROCV(D${linha+index};Produtos!A:D;3;0)*E${linha+index};0)`, // Valor Total (idem)
-        item.desconto,
-        item.valorPago,
+        desconto,
+        valorPago,
         `=I${linha+index}-(G${linha+index}-H${linha+index})`, // Valor Restante (cálculo automático)
         item.formaPagamento,
         'Pedidos',
@@ -96,7 +104,11 @@ exports.registrarPedido = async (req, res) => {
 
     await sheets.addMultiplasVendas(registrosVendas);
 
+    // Log para debug dos valores calculados
+    console.log(`Pedido ${novoID}: Valor Total BRUTO: R$ ${valorTotal}, Desconto Total: R$ ${descontoTotal}, Valor Pago Total: R$ ${valorPagoTotal}`);
+
     // 2. Registrar resumo na aba "Pedidos"
+    // Colunas: Data, Loja, ID, Nome, Telefone, Email, Desconto, Valor Total (BRUTO), Valor Pago, Valor Restante, Data Entrega, Status, Observação
     const resumoPedido = [
       dataHora,
       loja,
@@ -105,12 +117,12 @@ exports.registrarPedido = async (req, res) => {
       telefone,
       email || '',
       descontoTotal,
-      valorTotal,
+      valorTotal, // Valor total BRUTO (antes do desconto)
       valorPagoTotal, 
       `=I${linhaPedidos}-(H${linhaPedidos}-G${linhaPedidos})`, // Valor Restante será calculado na planilha
       dataEntrega || '',
       'Pedidos',
-      '' // Observação
+      observacaoGeral || '' // Observação geral do pedido
     ];
     await sheets.addPedido(resumoPedido);
 
@@ -163,9 +175,8 @@ exports.editarPedido = async (req, res) => {
 
   try {
     // Buscar o status atual do pedido
-    // const itens = await sheets.getItensDoPedido(id);
-    // const status = itens.length > 0 ? itens[0].status : 'Pedidos';
-    const status = await sheets.getItensDoPedido(id).status;
+    const itens = await sheets.getItensDoPedido(id);
+    const status = itens.length > 0 ? itens[0].status : 'Pedidos';
 
     // Chamar a função do service para atualizar o pedido
     await sheets.atualizarPedidoCompleto(id, pago, dataEntrega, status, observacao);
@@ -200,5 +211,57 @@ exports.deletarAviso = async (req, res) => {
   } catch (err) {
     console.error('Erro ao deletar aviso:', err);
     res.status(500).send('Erro ao deletar aviso');
+  }
+};
+
+exports.visualizarRecibo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Buscar o pedido pelo ID
+    const pedido = await sheets.getPedidoPorID(id);
+    
+    if (!pedido) {
+      return res.status(404).render('erro', { 
+        message: 'Pedido não encontrado',
+        error: 'O pedido solicitado não foi encontrado em nossa base de dados.'
+      });
+    }
+
+    // Buscar itens do pedido
+    const itens = await sheets.getItensDoPedido(id);
+    
+    // Determinar se deve mostrar dados sensíveis baseado no status
+    const mostrarDadosSensiveis = pedido.status !== 'Entregue';
+    
+    // Preparar dados para renderização
+    const dadosRecibo = {
+      pedido: {
+        id: pedido.id,
+        nome: mostrarDadosSensiveis ? pedido.nome : 'Cliente',
+        telefone: mostrarDadosSensiveis ? pedido.telefone : '***',
+        email: mostrarDadosSensiveis ? (pedido.email || 'Não informado') : '***',
+        loja: pedido.loja,
+        status: pedido.status,
+        dataHora: pedido.dataHora,
+        dataEntrega: pedido.dataEntrega,
+        total: pedido.total,
+        desconto: pedido.desconto,
+        pago: pedido.pago,
+        restante: pedido.restante,
+        observacao: pedido.observacao
+      },
+      itens: itens,
+      mostrarDadosSensiveis: mostrarDadosSensiveis
+    };
+
+    res.render('recibo', { dadosRecibo });
+    
+  } catch (error) {
+    console.error('Erro ao visualizar recibo:', error);
+    res.status(500).render('erro', { 
+      message: 'Erro interno do servidor',
+      error: 'Ocorreu um erro ao carregar o recibo. Tente novamente mais tarde.'
+    });
   }
 };

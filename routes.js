@@ -13,6 +13,7 @@ router.post('/editar-pedido', pdvController.editarPedido);
 router.get('/avisos', pdvController.getAvisos);
 router.post('/avisos', pdvController.salvarAviso);
 router.post('/avisos/deletar', pdvController.deletarAviso);
+router.get('/recibo/:id', pdvController.visualizarRecibo);
 
 
 module.exports = router;

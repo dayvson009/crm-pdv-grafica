@@ -11,19 +11,21 @@
       padding: 15px;
     }
 
-    .close {
-      background-color: #ff7373;
-      border: none;
-      border-radius: 5px;
-      margin: -5px 0 14px auto;
-      color: #fff;
-      font-weight: bold;
-      cursor: pointer;
-      display: block;
-      border-radius: 30px;
-      width: 35px;
-      height: 35px;
-    }
+         .close {
+       background-color: #ff7373;
+       border: none;
+       border-radius: 5px;
+       margin: -5px 0 14px auto;
+       color: #fff;
+       font-weight: bold;
+       cursor: pointer;
+       display: block;
+       border-radius: 30px;
+       width: 35px;
+       height: 35px;
+       position: absolute;
+       right: 20px;
+     }
 
     /* Estilos para o card melhorado */
     .card {
@@ -126,9 +128,9 @@
                 </div>
                 
                 <div>
-                  <small>Total: <%= p.total %></small>
+                  <small>Total: R$ <%= (parseFloat(p.total.replace('R$ ','')) - parseFloat(p.desconto.replace('R$ ',''))).toFixed(2) %></small>
                   <br />
-                  <small>Pagou: R$ <%= p.pago %></small>
+                  <small>Pagou: R$ <%= p.pago.replace('R$ ','') %></small>
                 </div>
 
                 <% if (p.dataEntrega) { %>
@@ -152,7 +154,7 @@
       <% }) %>
     </div>
 
-    <div id="popup" class="popup"></div>
+    <div id="popup" class="popup" style="position: absolute; top: 20px;"></div>
   </div>
   <script>
     // Funções helper para data de entrega
@@ -277,56 +279,117 @@
       const res = await fetch('/itens-do-pedido?id=' + pedido.id);
       const itens = await res.json();
       
-      popup.innerHTML = `
-      <button onclick="document.getElementById('popup').style.display='none'" class="buttons close">X</button>
-        <div style="display: flex; justify-content: space-between;">
-          <h3>Pedido #${pedido.id} - ${pedido.loja}</h3>
-          <div>
-            <label>Data de Entrega:</label>
-            <input type="date" id="editar-data" value="${pedido.dataEntrega || ''}">
-          </div>
-        </div>
-        <div style="display: flex; gap: 20px;">
-          <div class="client">
-            <p><strong>Cliente:</strong> ${pedido.nome}</p>
-            <p><strong>Telefone:</strong> ${pedido.telefone}</p>
-            <p><strong>Email:</strong> ${pedido.email}</p>
-            <p><strong>Telefone:</strong> ${pedido.telefone}</p>
-              <a href="https://wa.me/55${pedido.telefone}.replace(/\D/g, '')" target="_blank">📲 WhatsApp</a><br>
-          </div>
-          <div class="client">
-            <p><strong>Valor Total:</strong> <span>${pedido.total}</span></p>
-            <p><strong>Desconto:</strong> <span>${pedido.desconto}</span></p>
-            <div>
-              <label>Valor Pago: <input type="text" id="editar-pago" value="${pedido.pago.replace('R$ ','')}" style="width: 90px; font-size: 1em; text-align: right;"></label>
-            </div>
-            <p><strong>Valor Restante:</strong> <span>${pedido.restante}</span></p>
-            
-          </div>
-          <div class="client">
-            <label>Observação:</label>
-            <textarea type="text" id="editar-obs" value="" style="min-height: 90px;">${pedido.observacao || ''}</textarea>
-          </div>
-        </div>
+             popup.innerHTML = `
+       <button onclick="document.getElementById('popup').style.display='none'" class="buttons close">X</button>
+       
+               <!-- Cabeçalho do Recibo -->
+        <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px;">
+          <h2 style="margin: 0; color: #333; font-size: 24px;">PEDIDO</h2>
+         <div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 14px;">
+           <div>
+             <strong>Pedido #${pedido.id}</strong>
+           </div>
+           <div>
+             <strong>Loja:</strong> ${pedido.loja}
+           </div>
+           <div>
+             <label>Data de Entrega:</label>
+             <input type="date" id="editar-data" value="${pedido.dataEntrega || ''}" style="margin-left: 5px; padding: 3px;">
+           </div>
+         </div>
+       </div>
 
-        <h4 class="division">Itens do Pedido</h4>
-        <table id="tabela-editar-itens">
-          <thead>
-            <tr><th>Produto</th><th>Qtd</th><th>Observação</th></tr>
-          </thead>
-          <tbody>
-            ${itens.map((item, i) => `
-              <tr>
-                <td>${item.produto}</td>
-                <td>${item.qtd}</td>
-                <td>${item.observacao}</td>
+               <!-- Informações do Cliente -->
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+          <h3 style="margin: 0 0 10px 0; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px;">DADOS DO CLIENTE</h3>
+         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+           <div>
+             <p style="margin: 5px 0;"><strong>Nome:</strong> ${pedido.nome}</p>
+             <p style="margin: 5px 0;"><strong>Telefone:</strong> ${pedido.telefone}</p>
+           </div>
+           <div>
+             <p style="margin: 5px 0;"><strong>Email:</strong> ${pedido.email || 'Não informado'}</p>
+             <a href="https://wa.me/55${pedido.telefone.replace(/\D/g, '')}" target="_blank" style="color: #25D366; text-decoration: none; font-weight: bold;">📲 WhatsApp</a>
+           </div>
+         </div>
+       </div>
+
+               <!-- Itens do Pedido -->
+        <div style="margin-bottom: 20px;">
+          <h3 style="margin: 0 0 15px 0; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px;">ITENS DO PEDIDO</h3>
+         <table id="tabela-editar-itens" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                       <thead>
+              <tr style="background: #1aa5fb; color: white;">
+                <th style="padding: 12px; text-align: left; border: none;">Produto</th>
+                <th style="padding: 12px; text-align: center; border: none;">Qtd</th>
+                <th style="padding: 12px; text-align: right; border: none;">Valor Unit.</th>
+                <th style="padding: 12px; text-align: right; border: none;">Total</th>
+                <th style="padding: 12px; text-align: center; border: none;">Observação</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        
-       <button onclick="salvarAlteracoes()" class="buttons">💾 Salvar Alterações</button>
-      `;
+            </thead>
+           <tbody>
+             ${itens.map((item, i) => {
+               const valorUnitario = parseFloat(item.valorTotal || 0) / parseInt(item.qtd || 1);
+               const totalItem = parseFloat(item.valorTotal || 0);
+               return `
+                 <tr style="border-bottom: 1px solid #eee;">
+                   <td style="padding: 12px; border: none;">${item.produto}</td>
+                   <td style="padding: 12px; text-align: center; border: none;">${item.qtd}</td>
+                   <td style="padding: 12px; text-align: right; border: none;">R$ ${valorUnitario.toFixed(2)}</td>
+                   <td style="padding: 12px; text-align: right; border: none; font-weight: bold;">R$ ${totalItem.toFixed(2)}</td>
+                   <td style="padding: 12px; text-align: center; border: none; font-size: 12px;">${item.observacao || '-'}</td>
+                 </tr>
+               `;
+             }).join('')}
+           </tbody>
+         </table>
+       </div>
+
+               <!-- Resumo Financeiro -->
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+          <h3 style="margin: 0 0 15px 0; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px;">RESUMO FINANCEIRO</h3>
+         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+           <div>
+             <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+               <span><strong>Valor Total Bruto:</strong></span>
+               <span>${pedido.total}</span>
+             </div>
+             <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+               <span><strong>Desconto:</strong></span>
+               <span style="color: #dc3545;">- ${pedido.desconto}</span>
+             </div>
+             <div style="display: flex; justify-content: space-between; margin: 8px 0; font-size: 18px; font-weight: bold; border-top: 1px solid #ddd; padding-top: 8px;">
+               <span>Total com Desconto:</span>
+               <span style="color: #28a745;">R$ ${(parseFloat(pedido.total.replace('R$ ', '')) - parseFloat(pedido.desconto.replace('R$ ', ''))).toFixed(2)}</span>
+             </div>
+           </div>
+           <div>
+             <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+               <span><strong>Valor Pago:</strong></span>
+               <div>
+                 <input type="number" id="editar-pago" value="${pedido.pago.replace('R$ ','')}" step="0.01" min="0" style="width: 100px; padding: 13px; border: 1px solid #ddd; border-radius: 4px; text-align: right;">
+               </div>
+             </div>
+             <div style="display: flex; justify-content: space-between; margin: 8px 0; font-size: 18px; font-weight: bold; border-top: 1px solid #ddd; padding-top: 8px;">
+               <span>Valor Restante:</span>
+               <span style="color: #ffc107;">${pedido.restante}</span>
+             </div>
+           </div>
+         </div>
+       </div>
+
+       <!-- Observações -->
+       <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+         <h3 style="margin: 0 0 10px 0; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px;">📝 OBSERVAÇÕES</h3>
+         <textarea id="editar-obs" placeholder="Observações gerais sobre o pedido..." style="width: 100%; min-height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; font-family: inherit;">${pedido.observacao || ''}</textarea>
+       </div>
+
+               <!-- Botões de Ação -->
+        <div style="text-align: center; margin-top: 10px; display: flex; gap: 15px; justify-content: center;">
+          <button onclick="salvarAlteracoes()" class="buttons" style="background: #1aa5fb; color: white; border: none; padding: 12px 30px; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; margin-top: 0;">💾 Salvar Alterações</button>
+          <button onclick="copiarRecibo()" class="buttons" style="background: #28a745; color: white; border: none; padding: 12px 30px; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; margin-top: 0;">📋 Copiar Recibo</button>
+        </div>
+       `;
       popup.style.display = 'block';
     }
 
@@ -334,7 +397,7 @@
 
       const payload = {
         id: pedidoAtual.id,
-        pago: parseFloat(document.getElementById('editar-pago').value),
+        pago: parseFloat(document.getElementById('editar-pago').value) || 0,
         dataEntrega: document.getElementById('editar-data').value,
         observacao: document.getElementById('editar-obs').value,
       };
@@ -348,10 +411,83 @@
       if (res.ok) {
         alert('Pedido atualizado!');
         location.reload();
-      } else {
-        alert('Erro ao salvar alterações.');
-      }
-    }
+             } else {
+         alert('Erro ao salvar alterações.');
+       }
+     }
+
+     // Função para copiar recibo como texto para WhatsApp
+     async function copiarRecibo() {
+       try {
+         // Buscar itens atualizados
+         const res = await fetch('/itens-do-pedido?id=' + pedidoAtual.id);
+         const itens = await res.json();
+         
+         // Obter valores atuais dos campos
+         const valorPago = document.getElementById('editar-pago').value || '0';
+         const dataEntrega = document.getElementById('editar-data').value || '';
+         const observacao = document.getElementById('editar-obs').value || '';
+         
+         // Calcular total com desconto
+         const totalBruto = parseFloat(pedidoAtual.total.replace('R$ ', '')) || 0;
+         const desconto = parseFloat(pedidoAtual.desconto.replace('R$ ', '')) || 0;
+         const totalComDesconto = totalBruto - desconto;
+         
+         // Formatar data de entrega
+         const dataEntregaFormatada = dataEntrega ? new Date(dataEntrega).toLocaleDateString('pt-BR') : 'Não definida';
+         const dataPedido = new Date(pedidoAtual.dataHora.split(' ')[0]).toLocaleDateString('pt-BR');
+
+         console.log(pedidoAtual.dataHora);
+         
+         // Gerar texto do recibo
+         let reciboTexto = `*PEDIDO #${pedidoAtual.id}*\n`;
+         reciboTexto += `> *Data do Pedido:* ${dataPedido}\n`;
+         reciboTexto += `*Data de Entrega:* ${dataEntregaFormatada}\n\n`;
+         
+         reciboTexto += `*CLIENTE:*\n`;
+         reciboTexto += `Nome: ${pedidoAtual.nome}\n`;
+         reciboTexto += `Telefone: ${pedidoAtual.telefone}\n`;
+         if (pedidoAtual.email) {
+           reciboTexto += `Email: ${pedidoAtual.email}\n`;
+         }
+         reciboTexto += `\n`;
+         
+         reciboTexto += `*ITENS DO PEDIDO:*\n`;
+         itens.forEach((item, index) => {
+           const valorUnitario = parseFloat(item.valorTotal || 0) / parseInt(item.qtd || 1);
+           reciboTexto += `${index + 1}. ${item.produto}\n`;
+           reciboTexto += `   Qtd: ${item.qtd} | Valor Unit: R$ ${valorUnitario.toFixed(2)} | Total: R$ ${parseFloat(item.valorTotal || 0).toFixed(2)}\n`;
+           if (item.observacao) {
+             reciboTexto += `   Obs: ${item.observacao}\n`;
+           }
+           reciboTexto += `\n`;
+         });
+         
+         reciboTexto += `*PAGAMENTO:*\n`;
+         reciboTexto += `Valor Total Bruto: ${pedidoAtual.total}\n`;
+         reciboTexto += `Valor Pago: R$ ${parseFloat(valorPago).toFixed(2)}\n`;
+         reciboTexto += `Valor Restante: R$ ${(totalComDesconto - parseFloat(valorPago)).toFixed(2)}\n\n`;
+         
+         if (observacao) {
+           reciboTexto += `*OBSERVAÇÕES:*\n${observacao}\n\n`;
+         }
+         
+         reciboTexto += `---\n`;
+         reciboTexto += `_Acompanhe Seu Pedido_ - https://grafica.siteee.com.br/recibo/${pedidoAtual.id}\n`;
+         reciboTexto += `---\n`;
+         reciboTexto += `*devGraphic* - Agradece sua preferência!`;
+         
+         // Copiar para a área de transferência
+         await navigator.clipboard.writeText(reciboTexto);
+         
+         // Mostrar notificação de sucesso
+         alert('Recibo copiado para a área de transferência! Cole no WhatsApp para enviar ao cliente.');
+         
+       } catch (error) {
+         console.error('Erro ao copiar recibo:', error);
+         alert('Erro ao copiar recibo. Tente novamente.');
+       }
+     }
 
   </script>
 </body>
