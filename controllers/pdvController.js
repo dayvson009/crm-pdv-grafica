@@ -104,9 +104,6 @@ exports.registrarPedido = async (req, res) => {
 
     await sheets.addMultiplasVendas(registrosVendas);
 
-    // Log para debug dos valores calculados
-    console.log(`Pedido ${novoID}: Valor Total BRUTO: R$ ${valorTotal}, Desconto Total: R$ ${descontoTotal}, Valor Pago Total: R$ ${valorPagoTotal}`);
-
     // 2. Registrar resumo na aba "Pedidos"
     // Colunas: Data, Loja, ID, Nome, Telefone, Email, Desconto, Valor Total (BRUTO), Valor Pago, Valor Restante, Data Entrega, Status, Observação
     const resumoPedido = [
@@ -181,12 +178,10 @@ exports.getItensDoPedido = async (req, res) => {
 
 exports.editarPedido = async (req, res) => {
   const { id, pago, dataEntrega, observacao } = req.body;
-
+  const pedido = await sheets.getPedidoPorID(id);
+  const status = pedido.status;
+  
   try {
-    // Buscar o status atual do pedido
-    const itens = await sheets.getItensDoPedido(id);
-    const status = itens.length > 0 ? itens[0].status : 'Pedidos';
-
     // Chamar a função do service para atualizar o pedido
     await sheets.atualizarPedidoCompleto(id, pago, dataEntrega, status, observacao);
     res.send('Pedido atualizado com sucesso');
@@ -235,7 +230,6 @@ exports.getEstatisticasArquivados = async (req, res) => {
 
 exports.testarArquivamento = async (req, res) => {
   try {
-    console.log('🧪 Iniciando teste de arquivamento...');
     
     // Primeiro, buscar estatísticas antes do arquivamento
     const estatisticasAntes = await sheets.getEstatisticasArquivados();

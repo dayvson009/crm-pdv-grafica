@@ -150,17 +150,7 @@ exports.arquivarPedidosAntigos = async () => {
 
   const linhas = res.data.values || [];
   const hoje = dayjs.tz();
-  
-  console.log('🔍 Iniciando verificação de arquivamento automático...');
-  console.log(`📅 Data atual: ${hoje.format('DD-MM-YYYY HH:mm:ss')}`);
-  console.log(`📊 Total de pedidos encontrados: ${linhas.length}`);
-  
-  // Log das primeiras linhas para debug
-  console.log('\n🔍 PRIMEIRAS LINHAS DA PLANILHA:');
-  linhas.slice(0, 3).forEach((linha, index) => {
-    console.log(`Linha ${index + 1}:`, linha);
-  });
-  
+    
   let pedidosVerificados = 0;
   let pedidosArquivados = 0;
   let pedidosComErro = 0;
@@ -171,16 +161,11 @@ exports.arquivarPedidosAntigos = async () => {
     const dataEntrega = linha[10]; // Coluna K (11ª coluna, índice 10)
     const idPedido = linha[2]; // Coluna C (3ª coluna, índice 2)
     
-    console.log(`\n📋 Linha ${i + 2}: ID=${idPedido}, Status=${status}, DataEntrega=${dataEntrega}`);
     
     // Se o pedido está entregue e tem data de entrega
     if (status === 'Entregue' && dataEntrega) {
       pedidosVerificados++;
       try {
-        console.log(`📋 Verificando pedido #${idPedido}:`);
-        console.log(`   Status: ${status}`);
-        console.log(`   Data de entrega (bruto): "${dataEntrega}"`);
-        console.log(`   Tipo da data: ${typeof dataEntrega}`);
         
         let dataEntregaObj;
         
@@ -188,7 +173,6 @@ exports.arquivarPedidosAntigos = async () => {
         if (typeof dataEntrega === 'string') {
           // Remover espaços e caracteres especiais
           const dataLimpa = dataEntrega.trim().replace(/[^\d\-]/g, '');
-          console.log(`   Data limpa: "${dataLimpa}"`);
           
           // Tentar diferentes formatos sem timezone primeiro
           const formatos = ['YYYY-MM-DD', 'DD-MM-YYYY', 'DD/MM/YYYY', 'YYYY/MM/DD'];
@@ -197,62 +181,23 @@ exports.arquivarPedidosAntigos = async () => {
             try {
               dataEntregaObj = dayjs(dataLimpa, formato);
               if (dataEntregaObj.isValid()) {
-                console.log(`   ✅ Data válida com formato ${formato}: ${dataEntregaObj.format('DD-MM-YYYY')}`);
                 break;
               }
             } catch (error) {
-              console.log(`   ⚠️ Erro com formato ${formato}: ${error.message}`);
             }
-          }
-          
-          // Se ainda não é válida, tentar com a data original sem timezone
-          if (!dataEntregaObj || !dataEntregaObj.isValid()) {
-            try {
-              dataEntregaObj = dayjs(dataEntrega);
-              if (dataEntregaObj.isValid()) {
-                console.log(`   ✅ Data válida com formato automático: ${dataEntregaObj.format('DD-MM-YYYY')}`);
-              }
-            } catch (error) {
-              console.log(`   ⚠️ Erro com formato automático: ${error.message}`);
-            }
-          }
-          
-          // Se ainda não é válida, tentar com timezone
-          if (!dataEntregaObj || !dataEntregaObj.isValid()) {
-            try {
-              dataEntregaObj = dayjs.tz(dataLimpa, 'America/Recife');
-              if (dataEntregaObj.isValid()) {
-                console.log(`   ✅ Data válida com timezone: ${dataEntregaObj.format('DD-MM-YYYY')}`);
-              }
-            } catch (error) {
-              console.log(`   ⚠️ Erro com timezone: ${error.message}`);
-            }
-          }
-        } else {
-          // Se não é string, tentar converter diretamente
-          try {
-            dataEntregaObj = dayjs(dataEntrega);
-            if (dataEntregaObj.isValid()) {
-              console.log(`   ✅ Data válida (conversão direta): ${dataEntregaObj.format('DD-MM-YYYY')}`);
-            }
-          } catch (error) {
-            console.log(`   ⚠️ Erro na conversão direta: ${error.message}`);
           }
         }
         
         if (!dataEntregaObj || !dataEntregaObj.isValid()) {
-          console.log(`   ❌ Data inválida após todas as tentativas: ${dataEntrega}`);
           pedidosComErro++;
           continue;
         }
         
         // Calcular quantos dias se passaram desde a entrega
         const diasDesdeEntrega = hoje.diff(dataEntregaObj, 'day');
-        console.log(`   📊 Dias desde a entrega: ${diasDesdeEntrega}`);
         
         // Se passaram mais de 10 dias desde a entrega, arquivar
         if (diasDesdeEntrega > 10) {
-          console.log(`   ✅ Arquivando pedido (${diasDesdeEntrega} dias > 10 dias)`);
           
           // Atualizar o status para "Arquivado"
           const linhaDestino = i + 2;
@@ -263,27 +208,15 @@ exports.arquivarPedidosAntigos = async () => {
             resource: { values: [['Arquivado']] }
           });
           
-          console.log(`   🗂️ Pedido #${idPedido} arquivado com sucesso!`);
           pedidosArquivados++;
-        } else {
-          console.log(`   ⏳ Pedido ainda não deve ser arquivado (${diasDesdeEntrega} dias <= 10 dias)`);
-        }
+        } 
       } catch (error) {
         console.error(`   ❌ Erro ao processar pedido #${idPedido}:`, error);
         pedidosComErro++;
       }
-    } else if (status === 'Entregue' && !dataEntrega) {
-      console.log(`⚠️ Pedido #${linha[2]} está entregue mas sem data de entrega - não pode ser arquivado automaticamente`);
-    } else {
-      console.log(`ℹ️ Pedido #${linha[2]} não está entregue (status: ${status})`);
-    }
+    } 
   }
-  
-  console.log('\n📊 RESUMO DA VERIFICAÇÃO:');
-  console.log(`   Total de pedidos verificados: ${pedidosVerificados}`);
-  console.log(`   Pedidos arquivados: ${pedidosArquivados}`);
-  console.log(`   Pedidos com erro: ${pedidosComErro}`);
-  console.log('✅ Verificação de arquivamento concluída!');
+ 
 };
 
 exports.getPedidoPorID = async (id) => {
@@ -372,7 +305,6 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
   const valores = resV.data.values || [];
   const itensDoPedido = valores
     .map((v, i) => {
-      console.log(`Valores brutos da linha ${i + 2}:`, v);
       // Tentar ler os valores como números, mesmo se estiverem em fórmulas
       const valorTotal = v[6] ? (typeof v[6] === 'string' ? parseFloat(v[6].replace(/[^\d.,]/g, '').replace(',', '.')) : parseFloat(v[6])) || 0 : 0;
       const desconto = v[7] ? (typeof v[7] === 'string' ? parseFloat(v[7].replace(/[^\d.,]/g, '').replace(',', '.')) : parseFloat(v[7])) || 0 : 0;
@@ -393,15 +325,12 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
     })
     .filter(v => String(v.id) === String(id));
 
-  console.log(`Itens encontrados para o pedido ${id}:`, itensDoPedido.length);
-  console.log('IDs encontrados:', itensDoPedido.map(i => i.id));
-
   if (itensDoPedido.length === 0) {
     throw new Error('Nenhum item encontrado para este pedido');
   }
 
   // 2. PRIMEIRO: Zerar a coluna I (valor pago) de todos os itens do pedido
-  console.log('Zerando valores pagos de todos os itens...');
+  
   for (let item of itensDoPedido) {
     try {
       await sheets.spreadsheets.values.update({
@@ -412,7 +341,7 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
           values: [[0]]
         }
       });
-      console.log(`Zerado item ${item.produto} na linha ${item.linha}`);
+      
     } catch (error) {
       console.error(`Erro ao zerar item ${item.produto} na linha ${item.linha}:`, error);
     }
@@ -421,7 +350,7 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
   // 3. Calcular o valor restante de cada item (coluna J = valorTotal - desconto - valorPago)
   const itensComRestante = itensDoPedido.map(item => {
     const valorRestante = item.valorTotal - item.desconto; // Agora valorPago é 0
-    console.log(`Item ${item.produto}: valorTotal=${item.valorTotal}, desconto=${item.desconto}, valorPago=0, valorRestante=${valorRestante}`);
+    
     return {
       ...item,
       valorPago: 0, // Zerado
@@ -429,13 +358,6 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
     };
   });
 
-  console.log('Itens com valor restante:', itensComRestante.map(i => ({
-    produto: i.produto,
-    valorTotal: i.valorTotal,
-    desconto: i.desconto,
-    valorPago: i.valorPago,
-    valorRestante: i.valorRestante
-  })));
 
   // 4. Ordenar itens: primeiro os que têm débito (valor restante negativo), depois os outros
   itensComRestante.sort((a, b) => {
@@ -451,13 +373,11 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
   let valorRestanteParaDistribuir = pago;
   const itensAtualizados = [];
 
-  console.log(`Valor pago total: R$ ${pago}`);
 
   // Se todos os itens têm valor restante 0, distribuir proporcionalmente
   const todosZerados = itensComRestante.every(item => item.valorRestante === 0);
   
   if (todosZerados) {
-    console.log('Todos os itens têm valor restante 0, distribuindo proporcionalmente');
     const valorTotalItens = itensComRestante.reduce((sum, item) => sum + item.valorTotal, 0);
     
     for (let item of itensComRestante) {
@@ -474,14 +394,12 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
       });
 
       valorRestanteParaDistribuir -= valorAPagar;
-      console.log(`Item ${item.produto}: Distribuindo R$ ${valorAPagar}, novo valor pago: R$ ${novoValorPago}`);
+      
     }
   } else {
     // Lógica original para itens com débito
     for (let item of itensComRestante) {
       if (valorRestanteParaDistribuir <= 0) break;
-
-      console.log(`Processando item ${item.produto}: valorRestante=${item.valorRestante}, valorRestanteParaDistribuir=${valorRestanteParaDistribuir}`);
 
       // Se o item tem débito (valor restante negativo), pagar o débito primeiro
       if (item.valorRestante < 0) {
@@ -496,7 +414,6 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
         });
 
         valorRestanteParaDistribuir -= valorAPagar;
-        console.log(`Item ${item.produto}: Pagando débito de R$ ${valorAPagar}, novo valor pago: R$ ${novoValorPago}`);
       } else if (item.valorRestante > 0) {
         // Se o item ainda tem valor a pagar (valor restante positivo)
         const valorNecessario = item.valorRestante;
@@ -510,16 +427,9 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
         });
 
         valorRestanteParaDistribuir -= valorAPagar;
-        console.log(`Item ${item.produto}: Pagando valor restante de R$ ${valorAPagar}, novo valor pago: R$ ${novoValorPago}`);
       }
     }
   }
-
-  console.log('Itens a serem atualizados:', itensAtualizados.map(i => ({
-    produto: i.produto,
-    linha: i.linha,
-    valorPagoAtualizado: i.valorPagoAtualizado
-  })));
 
   // 6. Atualizar cada item na aba Vendas com o novo valor pago
   for (let item of itensAtualizados) {
@@ -532,7 +442,6 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
           values: [[item.valorPagoAtualizado]]
         }
       });
-      console.log(`Atualizado item ${item.produto} na linha ${item.linha} com valor R$ ${item.valorPagoAtualizado}`);
     } catch (error) {
       console.error(`Erro ao atualizar item ${item.produto} na linha ${item.linha}:`, error);
     }
@@ -558,7 +467,6 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
     }
   });
 
-  console.log(`Pedido ${id} atualizado com sucesso. Valor pago: R$ ${pago}, Status mantido: ${status}`);
 };
 
 exports.getAvisos = async () => {
