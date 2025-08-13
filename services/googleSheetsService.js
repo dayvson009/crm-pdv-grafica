@@ -118,21 +118,172 @@ exports.getPedidos = async () => {
 
   const linhas = res.data.values || [];
 
-  return linhas.map((linha) => ({
-    dataHora: linha[0],
-    loja: linha[1],
-    id: linha[2],
-    nome: linha[3],
-    telefone: linha[4],
-    email: linha[5],
-    desconto: linha[6],
-    total: linha[7],
-    pago: linha[8],
-    restante: linha[9],
-    dataEntrega: linha[10],
-    status: linha[11],
-    observacao: linha[12],
-  }));
+  // Primeiro, arquivar automaticamente pedidos entregues há mais de 10 dias
+  await exports.arquivarPedidosAntigos();
+
+  return linhas
+    .map((linha) => ({
+      dataHora: linha[0],
+      loja: linha[1],
+      id: linha[2],
+      nome: linha[3],
+      telefone: linha[4],
+      email: linha[5],
+      desconto: linha[6],
+      total: linha[7],
+      pago: linha[8],
+      restante: linha[9],
+      dataEntrega: linha[10],
+      status: linha[11],
+      observacao: linha[12],
+    }))
+    .filter(pedido => pedido.status !== 'Arquivado'); // Filtrar pedidos arquivados
+};
+
+// Função para arquivar automaticamente pedidos entregues há mais de 10 dias
+exports.arquivarPedidosAntigos = async () => {
+  const sheets = await authSheets();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: 'Pedidos!A2:M',
+  });
+
+  const linhas = res.data.values || [];
+  const hoje = dayjs.tz();
+  
+  console.log('🔍 Iniciando verificação de arquivamento automático...');
+  console.log(`📅 Data atual: ${hoje.format('DD-MM-YYYY HH:mm:ss')}`);
+  console.log(`📊 Total de pedidos encontrados: ${linhas.length}`);
+  
+  // Log das primeiras linhas para debug
+  console.log('\n🔍 PRIMEIRAS LINHAS DA PLANILHA:');
+  linhas.slice(0, 3).forEach((linha, index) => {
+    console.log(`Linha ${index + 1}:`, linha);
+  });
+  
+  let pedidosVerificados = 0;
+  let pedidosArquivados = 0;
+  let pedidosComErro = 0;
+  
+  for (let i = 0; i < linhas.length; i++) {
+    const linha = linhas[i];
+    const status = linha[11]; // Coluna L (12ª coluna, índice 11)
+    const dataEntrega = linha[10]; // Coluna K (11ª coluna, índice 10)
+    const idPedido = linha[2]; // Coluna C (3ª coluna, índice 2)
+    
+    console.log(`\n📋 Linha ${i + 2}: ID=${idPedido}, Status=${status}, DataEntrega=${dataEntrega}`);
+    
+    // Se o pedido está entregue e tem data de entrega
+    if (status === 'Entregue' && dataEntrega) {
+      pedidosVerificados++;
+      try {
+        console.log(`📋 Verificando pedido #${idPedido}:`);
+        console.log(`   Status: ${status}`);
+        console.log(`   Data de entrega (bruto): "${dataEntrega}"`);
+        console.log(`   Tipo da data: ${typeof dataEntrega}`);
+        
+        let dataEntregaObj;
+        
+        // Tentar diferentes formatos de data
+        if (typeof dataEntrega === 'string') {
+          // Remover espaços e caracteres especiais
+          const dataLimpa = dataEntrega.trim().replace(/[^\d\-]/g, '');
+          console.log(`   Data limpa: "${dataLimpa}"`);
+          
+          // Tentar diferentes formatos sem timezone primeiro
+          const formatos = ['YYYY-MM-DD', 'DD-MM-YYYY', 'DD/MM/YYYY', 'YYYY/MM/DD'];
+          
+          for (const formato of formatos) {
+            try {
+              dataEntregaObj = dayjs(dataLimpa, formato);
+              if (dataEntregaObj.isValid()) {
+                console.log(`   ✅ Data válida com formato ${formato}: ${dataEntregaObj.format('DD-MM-YYYY')}`);
+                break;
+              }
+            } catch (error) {
+              console.log(`   ⚠️ Erro com formato ${formato}: ${error.message}`);
+            }
+          }
+          
+          // Se ainda não é válida, tentar com a data original sem timezone
+          if (!dataEntregaObj || !dataEntregaObj.isValid()) {
+            try {
+              dataEntregaObj = dayjs(dataEntrega);
+              if (dataEntregaObj.isValid()) {
+                console.log(`   ✅ Data válida com formato automático: ${dataEntregaObj.format('DD-MM-YYYY')}`);
+              }
+            } catch (error) {
+              console.log(`   ⚠️ Erro com formato automático: ${error.message}`);
+            }
+          }
+          
+          // Se ainda não é válida, tentar com timezone
+          if (!dataEntregaObj || !dataEntregaObj.isValid()) {
+            try {
+              dataEntregaObj = dayjs.tz(dataLimpa, 'America/Recife');
+              if (dataEntregaObj.isValid()) {
+                console.log(`   ✅ Data válida com timezone: ${dataEntregaObj.format('DD-MM-YYYY')}`);
+              }
+            } catch (error) {
+              console.log(`   ⚠️ Erro com timezone: ${error.message}`);
+            }
+          }
+        } else {
+          // Se não é string, tentar converter diretamente
+          try {
+            dataEntregaObj = dayjs(dataEntrega);
+            if (dataEntregaObj.isValid()) {
+              console.log(`   ✅ Data válida (conversão direta): ${dataEntregaObj.format('DD-MM-YYYY')}`);
+            }
+          } catch (error) {
+            console.log(`   ⚠️ Erro na conversão direta: ${error.message}`);
+          }
+        }
+        
+        if (!dataEntregaObj || !dataEntregaObj.isValid()) {
+          console.log(`   ❌ Data inválida após todas as tentativas: ${dataEntrega}`);
+          pedidosComErro++;
+          continue;
+        }
+        
+        // Calcular quantos dias se passaram desde a entrega
+        const diasDesdeEntrega = hoje.diff(dataEntregaObj, 'day');
+        console.log(`   📊 Dias desde a entrega: ${diasDesdeEntrega}`);
+        
+        // Se passaram mais de 10 dias desde a entrega, arquivar
+        if (diasDesdeEntrega > 10) {
+          console.log(`   ✅ Arquivando pedido (${diasDesdeEntrega} dias > 10 dias)`);
+          
+          // Atualizar o status para "Arquivado"
+          const linhaDestino = i + 2;
+          await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `Pedidos!L${linhaDestino}`,
+            valueInputOption: 'USER_ENTERED',
+            resource: { values: [['Arquivado']] }
+          });
+          
+          console.log(`   🗂️ Pedido #${idPedido} arquivado com sucesso!`);
+          pedidosArquivados++;
+        } else {
+          console.log(`   ⏳ Pedido ainda não deve ser arquivado (${diasDesdeEntrega} dias <= 10 dias)`);
+        }
+      } catch (error) {
+        console.error(`   ❌ Erro ao processar pedido #${idPedido}:`, error);
+        pedidosComErro++;
+      }
+    } else if (status === 'Entregue' && !dataEntrega) {
+      console.log(`⚠️ Pedido #${linha[2]} está entregue mas sem data de entrega - não pode ser arquivado automaticamente`);
+    } else {
+      console.log(`ℹ️ Pedido #${linha[2]} não está entregue (status: ${status})`);
+    }
+  }
+  
+  console.log('\n📊 RESUMO DA VERIFICAÇÃO:');
+  console.log(`   Total de pedidos verificados: ${pedidosVerificados}`);
+  console.log(`   Pedidos arquivados: ${pedidosArquivados}`);
+  console.log(`   Pedidos com erro: ${pedidosComErro}`);
+  console.log('✅ Verificação de arquivamento concluída!');
 };
 
 exports.getPedidoPorID = async (id) => {
@@ -450,4 +601,49 @@ exports.deletarAviso = async (linha) => {
     spreadsheetId,
     range: `Avisos!A${linha}:D${linha}`
   });
+};
+
+// Função para buscar estatísticas de pedidos arquivados
+exports.getEstatisticasArquivados = async () => {
+  const sheets = await authSheets();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: 'Pedidos!A2:M',
+  });
+
+  const linhas = res.data.values || [];
+  const hoje = dayjs.tz();
+  const inicioMes = hoje.startOf('month');
+  
+  let totalArquivados = 0;
+  let arquivadosEsteMes = 0;
+  let ultimoArquivamento = null;
+  
+  linhas.forEach(linha => {
+    const status = linha[11];
+    const dataHora = linha[0];
+    
+    if (status === 'Arquivado') {
+      totalArquivados++;
+      
+      try {
+        const dataPedido = dayjs.tz(dataHora, 'DD-MM-YYYY HH:mm:ss');
+        if (dataPedido.isAfter(inicioMes)) {
+          arquivadosEsteMes++;
+        }
+        
+        if (!ultimoArquivamento || dataPedido.isAfter(ultimoArquivamento)) {
+          ultimoArquivamento = dataPedido.format('DD/MM/YYYY HH:mm');
+        }
+      } catch (error) {
+        console.error('Erro ao processar data do pedido arquivado:', error);
+      }
+    }
+  });
+  
+  return {
+    totalArquivados,
+    arquivadosEsteMes,
+    ultimoArquivamento
+  };
 };

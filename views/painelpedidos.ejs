@@ -114,7 +114,13 @@
 
   <div style="padding: 20px; margin-left: 210px;">
     <h2 class="title-page">Painel de Pedidos</h2>
-
+    
+    <!-- Mensagem informativa sobre arquivamento -->
+    <div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 8px; padding: 15px; margin-bottom: 20px; color: #1976d2;">
+      <strong>ℹ️ Informação:</strong> Pedidos com status "Entregue" são automaticamente arquivados após 10 dias da data de entrega.
+      <br>
+    </div>
+    <br>
     <div class="board">
       <% ['Orçamentos', 'Pedidos', 'Arte', 'Produção', 'Expedição', 'Entregue'].forEach(status => { %>
         <div class="column">
@@ -464,7 +470,10 @@
          });
          
          reciboTexto += `*PAGAMENTO:*\n`;
-         reciboTexto += `Valor Total Bruto: ${pedidoAtual.total}\n`;
+         reciboTexto += `Valor Total: ${pedidoAtual.total}\n`;
+         reciboTexto += `Desconto: ${pedidoAtual.desconto}\n`;
+         reciboTexto += `Total com Desconto: R$ ${totalComDesconto.toFixed(2)}\n`;
+         reciboTexto += `----------\n`;
          reciboTexto += `Valor Pago: R$ ${parseFloat(valorPago).toFixed(2)}\n`;
          reciboTexto += `Valor Restante: R$ ${(totalComDesconto - parseFloat(valorPago)).toFixed(2)}\n\n`;
          
@@ -486,6 +495,52 @@
        } catch (error) {
          console.error('Erro ao copiar recibo:', error);
          alert('Erro ao copiar recibo. Tente novamente.');
+       }
+     }
+
+     // Função para mostrar estatísticas de pedidos arquivados
+     async function mostrarEstatisticasArquivados() {
+       try {
+         const res = await fetch('/estatisticas-arquivados');
+         const estatisticas = await res.json();
+         
+         let mensagem = '📊 ESTATÍSTICAS DE PEDIDOS ARQUIVADOS\n\n';
+         mensagem += `Total de pedidos arquivados: ${estatisticas.totalArquivados}\n`;
+         mensagem += `Pedidos arquivados este mês: ${estatisticas.arquivadosEsteMes}\n`;
+         mensagem += `Último arquivamento: ${estatisticas.ultimoArquivamento || 'N/A'}\n\n`;
+         mensagem += 'ℹ️ Pedidos são arquivados automaticamente 10 dias após a entrega.';
+         
+         alert(mensagem);
+       } catch (error) {
+         console.error('Erro ao buscar estatísticas:', error);
+         alert('Erro ao buscar estatísticas de arquivados.');
+       }
+     }
+
+     // Função para testar o arquivamento manualmente
+     async function testarArquivamento() {
+       const resposta = confirm('Tem certeza que deseja testar o arquivamento manualmente? Isso pode afetar o status real dos pedidos.');
+       if (resposta) {
+         try {
+           const res = await fetch('/testar-arquivamento');
+           const data = await res.json();
+           
+           let mensagem = '🧪 TESTE DE ARQUIVAMENTO CONCLUÍDO\n\n';
+           mensagem += `Pedidos arquivados neste teste: ${data.pedidosArquivados}\n`;
+           mensagem += `Total antes: ${data.totalAntes}\n`;
+           mensagem += `Total depois: ${data.totalDepois}\n\n`;
+           mensagem += 'Verifique os logs do console para mais detalhes.';
+           
+           alert(mensagem);
+           
+           // Recarrega a página para mostrar os pedidos arquivados
+           if (data.pedidosArquivados > 0) {
+             location.reload();
+           }
+         } catch (error) {
+           console.error('Erro ao testar arquivamento:', error);
+           alert('Erro ao testar arquivamento. Tente novamente.');
+         }
        }
      }
 

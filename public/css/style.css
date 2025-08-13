@@ -55,7 +55,7 @@ body{
 
 .title-page{
   color: #7e30d2;
-  margin-bottom: 50px;
+  margin-bottom: 25px;
 }
 
 
@@ -379,3 +379,90 @@ body{
     .notification.error {
         background-color: #f44336; /* Cor de erro */
     }
+
+/* Estilos para o campo de busca com autocomplete */
+.search-container {
+    position: relative;
+    display: inline-block;
+}
+
+.search-container input[type="text"] {
+    width: 300px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.search-container input[type="text"]:focus {
+    outline: none;
+    border-color: #1aa5fb;
+    box-shadow: 0 0 0 2px rgba(26, 165, 251, 0.2);
+}
+
+.search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.search-result-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+}
+
+.search-result-item:hover {
+    background-color: #f8f9fa;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item.selected {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.search-result-item .product-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.search-result-item .product-price {
+    font-size: 12px;
+    color: #666;
+    margin-top: 2px;
+}
+
+.search-result-item .product-code {
+    font-size: 11px;
+    color: #999;
+    font-style: italic;
+}
+
+/* Estilo para quando não há resultados */
+.search-no-results {
+    padding: 15px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+/* Estilo para o campo quando um produto é selecionado */
+.search-container input[type="text"].selected {
+    background-color: #e8f5e8;
+    border-color: #4caf50;
+}

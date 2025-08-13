@@ -137,20 +137,29 @@ exports.registrarPedido = async (req, res) => {
 //// DASHBOARD
 
 exports.dashboardPedidos = async (req, res) => {
-  const pedidos = await sheets.getPedidos();
-  const porStatus = {};
+  try {
+    // Primeiro, aplicar arquivamento automático
+    await sheets.arquivarPedidosAntigos();
+    
+    // Depois buscar os pedidos (já filtrados para excluir arquivados)
+    const pedidos = await sheets.getPedidos();
+    const porStatus = {};
 
-  // Agrupar por status
-  pedidos.forEach(p => {
-    const status = p.status || 'Orçamentos';
-    if (!porStatus[status]) porStatus[status] = [];
-    porStatus[status].push(p);
-  });
+    // Agrupar por status
+    pedidos.forEach(p => {
+      const status = p.status || 'Orçamentos';
+      if (!porStatus[status]) porStatus[status] = [];
+      porStatus[status].push(p);
+    });
 
-  res.render('painelpedidos', { 
-    porStatus, 
-    currentPage: 'painelpedidos'
-  });
+    res.render('painelpedidos', { 
+      porStatus, 
+      currentPage: 'painelpedidos'
+    });
+  } catch (error) {
+    console.error('Erro ao carregar dashboard:', error);
+    res.status(500).send('Erro interno do servidor');
+  }
 };
 
 exports.atualizarStatusPedido = async (req, res) => {
@@ -211,6 +220,43 @@ exports.deletarAviso = async (req, res) => {
   } catch (err) {
     console.error('Erro ao deletar aviso:', err);
     res.status(500).send('Erro ao deletar aviso');
+  }
+};
+
+exports.getEstatisticasArquivados = async (req, res) => {
+  try {
+    const estatisticas = await sheets.getEstatisticasArquivados();
+    res.json(estatisticas);
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas de arquivados:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+exports.testarArquivamento = async (req, res) => {
+  try {
+    console.log('🧪 Iniciando teste de arquivamento...');
+    
+    // Primeiro, buscar estatísticas antes do arquivamento
+    const estatisticasAntes = await sheets.getEstatisticasArquivados();
+    
+    // Executar o arquivamento
+    await sheets.arquivarPedidosAntigos();
+    
+    // Buscar estatísticas depois do arquivamento
+    const estatisticasDepois = await sheets.getEstatisticasArquivados();
+    
+    const pedidosArquivados = estatisticasDepois.totalArquivados - estatisticasAntes.totalArquivados;
+    
+    res.json({ 
+      message: 'Teste de arquivamento concluído. Verifique os logs do console.',
+      pedidosArquivados: pedidosArquivados,
+      totalAntes: estatisticasAntes.totalArquivados,
+      totalDepois: estatisticasDepois.totalArquivados
+    });
+  } catch (error) {
+    console.error('Erro no teste de arquivamento:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };
 

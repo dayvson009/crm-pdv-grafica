@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Teste Produtos</title>
+</head>
+<body>
+  <h1>Teste de Carregamento de Produtos</h1>
+  
+  <h2>Produtos carregados (EJS):</h2>
+  <pre><%= JSON.stringify(produtos, null, 2) %></pre>
+  
+  <h2>Quantidade de produtos: <%= produtos ? produtos.length : 'NULO' %></h2>
+  
+  <h2>Primeiros 3 produtos:</h2>
+  <% if (produtos && produtos.length > 0) { %>
+    <% produtos.slice(0, 3).forEach((produto, index) => { %>
+      <div>
+        <strong>Produto <%= index + 1 %>:</strong>
+        Nome: <%= produto.nome %>, 
+        Preço: <%= produto.preco %>, 
+        Custo: <%= produto.custo %>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <p style="color: red;">Nenhum produto encontrado!</p>
+  <% } %>
+  
+  <script>
+      
+    // Teste de conversão para JavaScript
+    const produtosJS = <%- JSON.stringify(produtos) %>;
+    console.log('Produtos convertidos para JS:', produtosJS);
+    
+    if (produtosJS && produtosJS.length > 0) {
+      console.log('Primeiro produto:', produtosJS[0]);
+      console.log('Nome do primeiro:', produtosJS[0].nome);
+    }
+  </script>
+</body>
+</html>

@@ -42,11 +42,17 @@
           <div style="display: flex;">
             <div>
               <label>Produto:</label>
-              <select name="produto" id="pedido-produto">
-                <% produtos.forEach(p => { %>
-                  <option value="<%= p.nome %>" data-preco="<%= p.preco.replace(',', '.') %>"><%= p.nome %></option>
-                <% }) %>
-              </select>
+              <div class="search-container">
+                <input 
+                  type="text" 
+                  id="pedido-produto-search" 
+                  placeholder="Digite para buscar produtos..."
+                  autocomplete="off"
+                  style="width: 300px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
+                >
+                <div id="pedido-produto-results" class="search-results" style="display: none;"></div>
+                <input type="hidden" id="pedido-produto" name="produto" required>
+              </div>
             </div>
             <div>
               <label>Quantidade:</label>
@@ -154,6 +160,11 @@
   </div>
   <div id="notification-container"></div>
   <script>
+    // --- Sistema de Autocomplete para Produtos ---
+    
+    // Dados dos produtos (convertidos do EJS para JavaScript) - DEVE VIR PRIMEIRO!
+    const produtos = <%- JSON.stringify(produtos || []) %>;
+    
 
     const notificationContainer = document.getElementById('notification-container');
 
@@ -176,9 +187,15 @@
   }
 
     document.getElementById('btn-adicionar').onclick = () => {
-    const produtoSel = document.getElementById('pedido-produto').selectedOptions[0];
-    const nome = produtoSel.value;
-    const preco = validarNumero(produtoSel.dataset.preco.replace("R$ ", ""));
+    const nome = document.getElementById('pedido-produto').value;
+    const produto = produtos.find(p => p.nome === nome);
+    
+    if (!produto) {
+      showNotification('Por favor, selecione um produto válido.', 'error');
+      return;
+    }
+    
+    const preco = validarNumero(produto.preco.replace("R$ ", ""));
     const quantidade = parseInt(document.getElementById('pedido-quantidade').value || 1);
     const desconto = validarNumero(document.getElementById('pedido-desconto').value);
     const valorPago = validarNumero(document.getElementById('pedido-valor-pago').value);
@@ -326,8 +343,19 @@
   ];
 
   function atualizarTotaisPedido() {
-    const produtoSel = document.getElementById('pedido-produto').selectedOptions[0];
-    const preco = validarNumero(produtoSel.dataset.preco.replace('R$ ', ''));
+    // Buscar o produto selecionado pelo nome no campo hidden
+    const nomeProduto = document.getElementById('pedido-produto').value;
+    const produto = produtos.find(p => p.nome === nomeProduto);
+    
+    // Se não há produto selecionado, zerar os totais
+    if (!produto) {
+      totalSpanPedido.innerText = '0,00';
+      totalComDescontoSpanPedido.innerText = '0,00';
+      totalApagarSpan.innerText = '0,00';
+      return;
+    }
+    
+    const preco = validarNumero(produto.preco.replace('R$ ', ''));
     const quantidade = parseInt(document.getElementById('pedido-quantidade').value || 1);
     const desconto = validarNumero(document.getElementById('pedido-desconto').value);
     const valorPago = validarNumero(document.getElementById('pedido-valor-pago').value);
@@ -418,6 +446,152 @@
           }, { once: true });
       }, duration);
   }
+
+  // --- Sistema de Autocomplete para Produtos ---
+  
+  // Dados dos produtos já declarados acima
+
+  // Elementos do DOM para o formulário
+  // Elementos do DOM já declarados acima
+
+  // Elementos do DOM para autocomplete
+  const searchInput = document.getElementById('pedido-produto-search');
+  const searchResults = document.getElementById('pedido-produto-results');
+  const hiddenInput = document.getElementById('pedido-produto');
+  
+  
+  let selectedIndex = -1;
+  let filteredProducts = [];
+
+  // Função para filtrar produtos
+  function filterProducts(query) {
+    
+    if (!query.trim()) {
+      return [];
+    }
+    
+    const lowerQuery = query.toLowerCase();
+    const resultados = produtos.filter(produto => 
+      produto.nome.toLowerCase().includes(lowerQuery) ||
+      produto.nome.toLowerCase().startsWith(lowerQuery)
+    ).slice(0, 10);
+    
+    return resultados;
+  }
+
+  // Função para mostrar resultados
+  function showResults(products) {
+    if (products.length === 0) {
+      searchResults.innerHTML = '<div class="search-no-results">Nenhum produto encontrado</div>';
+      searchResults.style.display = 'block';
+      return;
+    }
+
+    searchResults.innerHTML = products.map((produto, index) => `
+      <div class="search-result-item" data-index="${index}" data-produto='${JSON.stringify(produto)}'>
+        <div class="product-name">${produto.nome}</div>
+        <div class="product-price">Preço: R$ ${produto.preco}</div>
+      </div>
+    `).join('');
+
+    searchResults.style.display = 'block';
+    selectedIndex = -1;
+  }
+
+  // Função para selecionar produto
+  function selectProduct(produto) {
+    searchInput.value = produto.nome;
+    hiddenInput.value = produto.nome;
+    searchResults.style.display = 'none';
+    searchInput.classList.add('selected');
+    
+    // Atualizar totais após selecionar produto
+    setTimeout(() => {
+      atualizarTotaisPedido();
+    }, 100);
+  }
+
+  // Event listeners
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value;
+    hiddenInput.value = query; // Atualizar campo hidden
+    
+    if (query.trim()) {
+      filteredProducts = filterProducts(query);
+      showResults(filteredProducts);
+    } else {
+      searchResults.style.display = 'none';
+      filteredProducts = [];
+    }
+    
+    searchInput.classList.remove('selected');
+  });
+
+  // Prevenir envio do formulário ao pressionar Enter no campo de busca
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Previne envio do formulário
+      
+      if (selectedIndex >= 0 && filteredProducts[selectedIndex]) {
+        selectProduct(filteredProducts[selectedIndex]);
+      } else if (filteredProducts.length > 0) {
+        // Se não há seleção, selecionar o primeiro resultado
+        selectProduct(filteredProducts[0]);
+      }
+      return;
+    }
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (selectedIndex < filteredProducts.length - 1) {
+        selectedIndex++;
+        updateSelection();
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (selectedIndex > 0) {
+        selectedIndex--;
+        updateSelection();
+      }
+    } else if (e.key === 'Escape') {
+      searchResults.style.display = 'none';
+      selectedIndex = -1;
+    }
+  });
+
+  // Função para atualizar seleção visual
+  function updateSelection() {
+    const items = searchResults.querySelectorAll('.search-result-item');
+    items.forEach((item, index) => {
+      item.classList.toggle('selected', index === selectedIndex);
+    });
+  }
+
+  // Event listener para cliques nos resultados
+  searchResults.addEventListener('click', (e) => {
+    const item = e.target.closest('.search-result-item');
+    if (item) {
+      const index = parseInt(item.dataset.index);
+      const produto = filteredProducts[index];
+      selectProduct(produto);
+    }
+  });
+
+  // Esconder resultados ao clicar fora
+  document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+      searchResults.style.display = 'none';
+      selectedIndex = -1;
+    }
+  });
+
+  // Limpar seleção ao focar no campo
+  searchInput.addEventListener('focus', () => {
+    if (searchInput.value.trim()) {
+      filteredProducts = filterProducts(searchInput.value);
+      showResults(filteredProducts);
+    }
+  });
 
 </script>
 
