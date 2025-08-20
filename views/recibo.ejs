@@ -223,12 +223,12 @@
                 <div class="info-grid">
                     <div class="info-item">
                         <span class="info-label">Data do Pedido:</span>
-                        <span class="info-value"><%= dadosRecibo.pedido.dataHora.split(' ')[0] %></span>
+                        <span class="info-value"><%= dadosRecibo.pedido.dataHora.split(' ')[0].split('-').join('/') %></span>
                     </div>
                     <% if (dadosRecibo.pedido.dataEntrega) { %>
                     <div class="info-item">
                         <span class="info-label">Data de Entrega:</span>
-                        <span class="info-value"><%= dadosRecibo.pedido.dataEntrega %></span>
+                        <span class="info-value"><%= dadosRecibo.pedido.dataEntrega.split('-').reverse().join('/') %></span>
                     </div>
                     <% } %>
                 </div>
@@ -250,9 +250,9 @@
                         <% dadosRecibo.itens.forEach((item, index) => { %>
                         <tr>
                             <td><%= item.produto %></td>
-                            <td>R$ <%= (parseFloat(item.valorTotal || 0) / parseInt(item.qtd || 1)).toFixed(2) %></td>
+                            <td>R$ <%= (parseFloat(item.valorTotal || 0) / parseInt(item.qtd || 1)).toFixed(2).replace('.',',') %></td>
                             <td style="text-align: center;"><%= item.qtd %></td>
-                            <td style="text-align: right;"><strong>R$ <%= parseFloat(item.valorTotal || 0).toFixed(2) %></strong></td>
+                            <td style="text-align: right;"><strong>R$ <%= parseFloat(item.valorTotal || 0).toFixed(2).replace('.',',') %></strong></td>
                         </tr>
                         <% }); %>
                     </tbody>
@@ -273,7 +273,7 @@
                     </div>
                     <div class="info-item">
                         <span class="info-label">Total com Desconto:</span>
-                        <span class="info-value">R$ <%= (parseFloat(dadosRecibo.pedido.total.replace('R$ ', '')) - parseFloat(dadosRecibo.pedido.desconto.replace('R$ ', ''))).toFixed(2) %></span>
+                        <span class="info-value">R$ <%= (parseFloat(dadosRecibo.pedido.total.replace('R$ ', '')) - parseFloat(dadosRecibo.pedido.desconto.replace('R$ ', ''))).toFixed(2).replace('.',',') %></span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Valor Pago:</span>

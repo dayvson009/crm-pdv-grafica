@@ -122,21 +122,35 @@ exports.getPedidos = async () => {
   await exports.arquivarPedidosAntigos();
 
   return linhas
-    .map((linha) => ({
-      dataHora: linha[0],
-      loja: linha[1],
-      id: linha[2],
-      nome: linha[3],
-      telefone: linha[4],
-      email: linha[5],
-      desconto: linha[6],
-      total: linha[7],
-      pago: linha[8],
-      restante: linha[9],
-      dataEntrega: linha[10],
-      status: linha[11],
-      observacao: linha[12],
-    }))
+    .map((linha) => {
+
+      const parseNumericValue = (value) => {
+        if (value === null || value === undefined || value === '') return 0;
+        if (typeof value === 'number') return value;
+        if (typeof value === 'string') {
+          // Remove caracteres especiais e converte para número
+          const cleanValue = value.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
+          const num = parseFloat(cleanValue);
+          return isNaN(num) ? 0 : num;
+        }
+        return 0;
+      };
+      return{
+        dataHora: linha[0],
+        loja: linha[1],
+        id: linha[2],
+        nome: linha[3],
+        telefone: linha[4],
+        email: linha[5],
+        desconto: parseNumericValue(linha[6]),
+        total: parseNumericValue(linha[7]),
+        pago: parseNumericValue(linha[8]),
+        restante: parseNumericValue(linha[9]),
+        dataEntrega: linha[10],
+        status: linha[11],
+        observacao: linha[12],
+      };
+    })
     .filter(pedido => pedido.status !== 'Arquivado'); // Filtrar pedidos arquivados
 };
 
@@ -310,14 +324,26 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
       const desconto = v[7] ? (typeof v[7] === 'string' ? parseFloat(v[7].replace(/[^\d.,]/g, '').replace(',', '.')) : parseFloat(v[7])) || 0 : 0;
       const valorPago = v[8] ? (typeof v[8] === 'string' ? parseFloat(v[8].replace(/[^\d.,]/g, '').replace(',', '.')) : parseFloat(v[8])) || 0 : 0;
       
+      const parseNumericValue = (value) => {
+        if (value === null || value === undefined || value === '') return 0;
+        if (typeof value === 'number') return value;
+        if (typeof value === 'string') {
+          // Remove caracteres especiais e converte para número
+          const cleanValue = value.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
+          const num = parseFloat(cleanValue);
+          return isNaN(num) ? 0 : num;
+        }
+        return 0;
+      };
+      
       return { 
         linha: i + 2, 
         id: v[2], 
         produto: v[3],
         qtd: parseInt(v[4]) || 0,
-        valorTotal: valorTotal,
-        desconto: desconto,
-        valorPago: valorPago,
+        valorTotal: parseNumericValue(valorTotal),
+        desconto: parseNumericValue(desconto),
+        valorPago: parseNumericValue(valorPago),
         formaPagamento: v[10],
         status: v[11],
         observacao: v[12] || ''

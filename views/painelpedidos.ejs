@@ -134,9 +134,9 @@
                 </div>
                 
                 <div>
-                  <small>Total: R$ <%= (parseFloat(p.total.replace('R$ ','')) - parseFloat(p.desconto.replace('R$ ',''))).toFixed(2) %></small>
+                  <small>Total: R$ <%= (parseFloat(p.total || 0) - parseFloat(p.desconto || 0)).toFixed(2).replace('.',',') %></small>
                   <br />
-                  <small>Pagou: R$ <%= p.pago.replace('R$ ','') %></small>
+                  <small>Pagou: R$ <%= parseFloat(p.pago || 0).toFixed(2).replace('.',',') %></small>
                 </div>
 
                 <% if (p.dataEntrega) { %>
@@ -166,13 +166,23 @@
     // Funções helper para data de entrega
     function formatDataEntrega(dataString) {
       if (!dataString) return '';
-      
+
       try {
-        const data = new Date(dataString);
-        if (isNaN(data.getTime())) return dataString;
+        // 1. Divide a string em ano, mês e dia
+        const [ano, mes, dia] = dataString.split('-').map(Number);
         
+        // 2. Cria a data usando o construtor Y, M, D, que é local
+        //    IMPORTANTE: O mês em JavaScript é baseado em zero (0 = janeiro, 11 = dezembro)
+        const data = new Date(ano, mes - 1, dia);
+
+        if (isNaN(data.getTime())) {
+          // Caso a string não seja uma data válida, retorna a string original
+          return dataString;
+        }
+
         return data.toLocaleDateString('pt-BR');
       } catch (error) {
+        // Em caso de qualquer erro de parsing, retorna a string original
         return dataString;
       }
     }
@@ -341,8 +351,8 @@
                  <tr style="border-bottom: 1px solid #eee;">
                    <td style="padding: 12px; border: none;">${item.produto}</td>
                    <td style="padding: 12px; text-align: center; border: none;">${item.qtd}</td>
-                   <td style="padding: 12px; text-align: right; border: none;">R$ ${valorUnitario.toFixed(2)}</td>
-                   <td style="padding: 12px; text-align: right; border: none; font-weight: bold;">R$ ${totalItem.toFixed(2)}</td>
+                   <td style="padding: 12px; text-align: right; border: none;">R$ ${parseFloat(valorUnitario).toFixed(2).replace('.',',')}</td>
+                   <td style="padding: 12px; text-align: right; border: none; font-weight: bold;">R$ ${parseFloat(totalItem).toFixed(2).replace('.',',')}</td>
                    <td style="padding: 12px; text-align: center; border: none; font-size: 12px;">${item.observacao || '-'}</td>
                  </tr>
                `;
@@ -358,27 +368,28 @@
            <div>
              <div style="display: flex; justify-content: space-between; margin: 8px 0;">
                <span><strong>Valor Total Bruto:</strong></span>
-               <span>${pedido.total}</span>
+               <span>${parseFloat(pedido.total).toFixed(2).replace('.',',')}</span>
              </div>
              <div style="display: flex; justify-content: space-between; margin: 8px 0;">
                <span><strong>Desconto:</strong></span>
-               <span style="color: #dc3545;">- ${pedido.desconto}</span>
+               <span style="color: #dc3545;">- ${parseFloat(pedido.desconto).toFixed(2).replace('.',',')}</span>
              </div>
-             <div style="display: flex; justify-content: space-between; margin: 8px 0; font-size: 18px; font-weight: bold; border-top: 1px solid #ddd; padding-top: 8px;">
-               <span>Total com Desconto:</span>
-               <span style="color: #28a745;">R$ ${(parseFloat(pedido.total.replace('R$ ', '')) - parseFloat(pedido.desconto.replace('R$ ', ''))).toFixed(2)}</span>
-             </div>
-           </div>
-           <div>
-             <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+             <div style="display: flex; justify-content: space-between; margin: 8px 0; border-top: 1px solid #ddd; padding-top: 8px">
                <span><strong>Valor Pago:</strong></span>
                <div>
-                 <input type="number" id="editar-pago" value="${pedido.pago.replace('R$ ','')}" step="0.01" min="0" style="width: 100px; padding: 13px; border: 1px solid #ddd; border-radius: 4px; text-align: right;">
+                 <input type="number" id="editar-pago" value="${parseFloat(pedido.pago || 0).toFixed(2)}" step="0.01" min="0" style="width: 100px; padding: 13px; border: 1px solid #ddd; border-radius: 4px; text-align: right;">
                </div>
              </div>
-             <div style="display: flex; justify-content: space-between; margin: 8px 0; font-size: 18px; font-weight: bold; border-top: 1px solid #ddd; padding-top: 8px;">
+             
+           </div>
+           <div>
+             <div style="display: flex; justify-content: space-between; margin: 0; font-size: 18px; font-weight: bold; padding-top: 0px;">
+               <span>Total com Desconto:</span>
+               <span style="color: #28a745;">R$ ${(parseFloat(pedido.total || 0) - parseFloat(pedido.desconto || 0)).toFixed(2).replace('.',',')}</span>
+             </div>
+             <div style="display: flex; justify-content: space-between; margin: 8px 0; font-size: 18px; font-weight: bold; padding-top: 8px;">
                <span>Valor Restante:</span>
-               <span style="color: #ffc107;">${pedido.restante}</span>
+               <span style="color: #ffc107;">${parseFloat(pedido.restante).toFixed(2).replace('.',',')}</span>
              </div>
            </div>
          </div>
@@ -435,16 +446,13 @@
          const observacao = document.getElementById('editar-obs').value || '';
          
          // Calcular total com desconto
-         const totalBruto = parseFloat(pedidoAtual.total.replace('R$ ', '')) || 0;
-         const desconto = parseFloat(pedidoAtual.desconto.replace('R$ ', '')) || 0;
+         const totalBruto = parseFloat(pedidoAtual.total || 0) || 0;
+         const desconto = parseFloat(pedidoAtual.desconto || 0) || 0;
          const totalComDesconto = totalBruto - desconto;
          
          // Formatar data de entrega
-         const dataEntregaFormatada = dataEntrega ? new Date(dataEntrega).toLocaleDateString('pt-BR') : 'Não definida';
-         const dataPedido = new Date(pedidoAtual.dataHora.split(' ')[0]).toLocaleDateString('pt-BR');
-
-         console.log(pedidoAtual.dataHora);
-         
+         const dataEntregaFormatada = dataEntrega ? new Date(`${dataEntrega}T12:00:00`).toLocaleDateString('pt-BR') : 'Não definida';
+         const dataPedido = pedidoAtual.dataHora.split(' ')[0].replace(/-/g, '/');
          // Gerar texto do recibo
          let reciboTexto = `*PEDIDO #${pedidoAtual.id}*\n`;
          reciboTexto += `> *Data do Pedido:* ${dataPedido}\n`;
@@ -462,7 +470,7 @@
          itens.forEach((item, index) => {
            const valorUnitario = parseFloat(item.valorTotal || 0) / parseInt(item.qtd || 1);
            reciboTexto += `${index + 1}. ${item.produto}\n`;
-           reciboTexto += `   Qtd: ${item.qtd} | Valor Unit: R$ ${valorUnitario.toFixed(2)} | Total: R$ ${parseFloat(item.valorTotal || 0).toFixed(2)}\n`;
+           reciboTexto += `   Qtd: ${item.qtd} | Valor Unit: R$ ${valorUnitario.toFixed(2).replace('.',',')} | Total: R$ ${parseFloat(item.valorTotal || 0).toFixed(2).replace('.',',')}\n`;
            if (item.observacao) {
              reciboTexto += `   Obs: ${item.observacao}\n`;
            }
@@ -470,12 +478,12 @@
          });
          
          reciboTexto += `*PAGAMENTO:*\n`;
-         reciboTexto += `Valor Total: ${pedidoAtual.total}\n`;
-         reciboTexto += `Desconto: ${pedidoAtual.desconto}\n`;
-         reciboTexto += `Total com Desconto: R$ ${totalComDesconto.toFixed(2)}\n`;
+         reciboTexto += `Valor Total: ${parseFloat(pedidoAtual.total).toFixed(2).replace('.',',')}\n`;
+         reciboTexto += `Desconto: ${parseFloat(pedidoAtual.desconto).toFixed(2).replace('.',',')}\n`;
+         reciboTexto += `Total com Desconto: R$ ${parseFloat(totalComDesconto).toFixed(2).replace('.',',')}\n`;
          reciboTexto += `----------\n`;
-         reciboTexto += `Valor Pago: R$ ${parseFloat(valorPago).toFixed(2)}\n`;
-         reciboTexto += `Valor Restante: R$ ${(totalComDesconto - parseFloat(valorPago)).toFixed(2)}\n\n`;
+         reciboTexto += `Valor Pago: R$ ${parseFloat(valorPago).toFixed(2).replace('.',',')}\n`;
+         reciboTexto += `Valor Restante: R$ ${parseFloat(totalComDesconto - valorPago).toFixed(2).replace('.',',')}\n\n`;
          
          if (observacao) {
            reciboTexto += `*OBSERVAÇÕES:*\n${observacao}\n\n`;
