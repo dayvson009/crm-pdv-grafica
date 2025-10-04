@@ -191,8 +191,15 @@
 
   // Função helper para validar e converter valores numéricos
   function validarNumero(valor, padrao = 0) {
-    const numero = parseFloat(valor);
-    return isNaN(numero) ? padrao : numero;
+    if (valor === null || valor === undefined || valor === '') return padrao;
+    if (typeof valor === 'number') return valor;
+    if (typeof valor === 'string') {
+      // Remove caracteres especiais e converte vírgula para ponto
+      const cleanValue = valor.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
+      const num = parseFloat(cleanValue);
+      return isNaN(num) ? padrao : num;
+    }
+    return padrao;
   }
 
   // Função helper para converter valores monetários do Google Sheets
@@ -217,7 +224,7 @@
       return;
     }
     
-    const preco = validarNumero(produto.preco.replace("R$ ", ""));
+    const preco = validarNumero(produto.preco.replace(/R\$ /g, '').replace(/\./g, '').replace(',', '.'));
     const quantidade = parseInt(document.getElementById('pedido-quantidade').value || 1);
     const desconto = validarNumero(document.getElementById('pedido-desconto').value);
     const valorPago = validarNumero(document.getElementById('pedido-valor-pago').value);
@@ -397,7 +404,7 @@
       return;
     }
     
-    const preco = validarNumero(produto.preco.replace('R$ ', ''));
+    const preco = validarNumero(produto.preco.replace(/R\$ /g, '').replace(/\./g, '').replace(',', '.'));
     const quantidade = parseInt(document.getElementById('pedido-quantidade').value || 1);
     const desconto = validarNumero(document.getElementById('pedido-desconto').value);
     const valorPago = validarNumero(document.getElementById('pedido-valor-pago').value);
@@ -412,7 +419,7 @@
       const largura = validarNumero(document.getElementById('pedido-largura').value, 0);
       const altura = validarNumero(document.getElementById('pedido-altura').value, 0);
       const area = largura * altura;
-      let valorPorUnidade = preco * area / 10000;
+      let valorPorUnidade = preco * area;
       
       // Converter e aplicar valor mínimo (coluna G na planilha) por unidade
       const valorMinimo = converterValorMonetario(produto.minimo);

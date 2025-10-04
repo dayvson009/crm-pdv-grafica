@@ -25,7 +25,6 @@ exports.registrarVenda = async (req, res) => {
   try {
     const data = dayjs.tz().format('DD-MM-YYYY HH:mm:ss');
     const novoID = await sheets.getNovoIDPedido();
-    const linha = await sheets.getProximaLinha();
 
     const {
       produto,
@@ -39,10 +38,41 @@ exports.registrarVenda = async (req, res) => {
     } = req.body;
 
     const qtd = parseInt(quantidade);
+    const descontoNum = parseFloat(desconto) || 0;
+    const valorPagoNum = parseFloat(valorPago) || 0;
 
-    // Deixa as colunas com fórmula vazias
+    // Buscar dados do produto
+    const produtoData = await sheets.getProdutoPorNome(produto);
+    
+    if (!produtoData) {
+      return res.status(400).json({ message: 'Produto não encontrado.' });
+    }
+
+    // Calcular valores reais
+    const preco = parseFloat(produtoData.preco.replace('R$ ', '').replace(',', '.')) || 0;
+    const custoUnitario = parseFloat(produtoData.custo.replace('R$ ', '').replace(',', '.')) || 0;
+    
+    const valorTotalBruto = preco * qtd;
+    const custoTotal = custoUnitario * qtd;
+    const valorTotalComDesconto = valorTotalBruto - descontoNum;
+    const valorRestante = valorTotalComDesconto - valorPagoNum;
+
+    // Registrar venda com valores reais
     await sheets.addVenda([
-      data, loja, novoID, produto, qtd, `=SEERRO(PROCV(D${linha};Produtos!A:D;2;0)*E${linha};0)`, `=SEERRO(PROCV(D${linha};Produtos!A:D;3;0)*E${linha};0)`, desconto, valorPago, `=I${linha}-(G${linha}-H${linha})`, formaPagamento, status, observacao
+      data, 
+      loja, 
+      novoID, 
+      produto, 
+      qtd, 
+      custoTotal, // Custo total real
+      valorTotalBruto, // Valor total bruto real
+      descontoNum, 
+      valorPagoNum, 
+      valorRestante, // Valor restante real
+      formaPagamento, 
+      status, 
+      observacao,
+      preco // Nova coluna N - valor unitário
     ]);
 
     res.status(200).json({ message: 'Venda registrado com sucesso!' });
@@ -71,15 +101,35 @@ exports.registrarPedido = async (req, res) => {
     let valorPagoTotal = 0;
     let descontoTotal = 0;
 
+    // Buscar todos os produtos de uma vez para otimizar
+    const todosProdutos = await sheets.getProdutos();
+    
     // 1. Registrar cada item na aba "Vendas"
     const registrosVendas = itens.map((item, index) => {
       // Garantir que os valores sejam números
       const desconto = parseFloat(item.desconto) || 0;
       const valorPago = parseFloat(item.valorPago) || 0;
       const valorTotalItem = parseFloat(item.valorTotal) || 0;
+      const valorTotalBrutoItem = parseFloat(item.valorTotalBruto) || 0;
       
-      // Calcular o valor total bruto (antes do desconto) para este item
-      const valorTotalBrutoItem = valorTotalItem + desconto;
+      // Buscar produto na lista já carregada
+      const produto = todosProdutos.find(p => p.nome === item.produto);
+      
+      // Calcular valor unitário baseado no tipo de produto
+      let valorUnitario = 0;
+      if (produto) {
+        const preco = parseFloat(produto.preco.replace('R$ ', '').replace(',', '.')) || 0;
+        valorUnitario = preco; // Valor unitário (por m² ou por unidade)
+      }
+      
+      // Calcular custo unitário (coluna B da planilha Produtos)
+      let custoUnitario = 0;
+      if (produto) {
+        custoUnitario = parseFloat(produto.custo.replace('R$ ', '').replace(',', '.')) || 0;
+      }
+      
+      const custoTotal = custoUnitario * item.quantidade;
+      const valorRestante = valorTotalItem - valorPago;
       
       valorTotal += valorTotalBrutoItem; // Agora é o total bruto
       valorPagoTotal += valorPago;
@@ -91,14 +141,15 @@ exports.registrarPedido = async (req, res) => {
         novoID,
         item.produto,
         item.quantidade,
-        `=SEERRO(PROCV(D${linha+index};Produtos!A:D;2;0)*E${linha+index};0)`, // Custo (cálculo automático na planilha)
-        `=SEERRO(PROCV(D${linha+index};Produtos!A:D;3;0)*E${linha+index};0)`, // Valor Total (idem)
+        custoTotal, // Custo total real
+        valorTotalBrutoItem, // Valor total bruto real
         desconto,
         valorPago,
-        `=I${linha+index}-(G${linha+index}-H${linha+index})`, // Valor Restante (cálculo automático)
+        valorRestante, // Valor restante real
         item.formaPagamento,
         'Pedidos',
-        item.observacao || ''
+        item.observacao || '',
+        valorUnitario // Nova coluna N - valor unitário
       ];
     });
 
@@ -106,6 +157,8 @@ exports.registrarPedido = async (req, res) => {
 
     // 2. Registrar resumo na aba "Pedidos"
     // Colunas: Data, Loja, ID, Nome, Telefone, Email, Desconto, Valor Total (BRUTO), Valor Pago, Valor Restante, Data Entrega, Status, Observação
+    const valorRestanteTotal = valorTotal - descontoTotal - valorPagoTotal;
+    
     const resumoPedido = [
       dataHora,
       loja,
@@ -116,7 +169,7 @@ exports.registrarPedido = async (req, res) => {
       descontoTotal,
       valorTotal, // Valor total BRUTO (antes do desconto)
       valorPagoTotal, 
-      `=I${linhaPedidos}-(H${linhaPedidos}-G${linhaPedidos})`, // Valor Restante será calculado na planilha
+      valorRestanteTotal, // Valor Restante real calculado
       dataEntrega || '',
       'Pedidos',
       observacaoGeral || '' // Observação geral do pedido

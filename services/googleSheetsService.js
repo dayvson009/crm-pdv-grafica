@@ -291,7 +291,7 @@ exports.getItensDoPedido = async (idPedido) => {
   const sheets = await authSheets();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'Vendas!A2:M',
+    range: 'Vendas!A2:N',
   });
 
   const dados = res.data.values || [];
@@ -307,7 +307,8 @@ exports.getItensDoPedido = async (idPedido) => {
       valorPago: l[8] ? (typeof l[8] === 'string' ? parseFloat(l[8].replace(/[^\d.,]/g, '').replace(',', '.')) : parseFloat(l[8])) || 0 : 0,
       formaPagamento: l[10],
       status: l[11],
-      observacao: l[12] || ''
+      observacao: l[12] || '',
+      valorUnitario: l[13] ? (typeof l[13] === 'string' ? parseFloat(l[13].replace(/[^\d.,]/g, '').replace(',', '.')) : parseFloat(l[13])) || 0 : 0
     }));
 };
 
@@ -317,7 +318,7 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
   // 1. Buscar todos os itens da aba Vendas com esse ID
   const resV = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'Vendas!A2:M',
+    range: 'Vendas!A2:N',
   });
 
   const valores = resV.data.values || [];
@@ -480,12 +481,19 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
   // 7. Atualizar aba Pedidos (mantendo o status atual)
   const resP = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'Pedidos!C2:C',
+    range: 'Pedidos!C2:M',
   });
 
   const linhas = resP.data.values || [];
   const index = linhas.findIndex(l => String(l[0]) === String(id));
   if (index === -1) throw new Error('Pedido não encontrado');
+
+  const linhaPedido = linhas[index];
+  const valorTotalPedido = parseFloat(linhaPedido[7]) || 0; // Coluna H (valor total)
+  const descontoPedido = parseFloat(linhaPedido[6]) || 0; // Coluna G (desconto)
+  
+  // Calcular valor restante real: Valor Total - Desconto - Valor Pago
+  const valorRestanteReal = valorTotalPedido - descontoPedido - pago;
 
   const linhaDestino = index + 2;
   await sheets.spreadsheets.values.update({
@@ -493,7 +501,7 @@ exports.atualizarPedidoCompleto = async (id, pago, entrega, status, obs) => {
     range: `Pedidos!I${linhaDestino}:M${linhaDestino}`,
     valueInputOption: 'USER_ENTERED',
     resource: {
-      values: [[pago, `=I${linhaDestino}-(H${linhaDestino}-G${linhaDestino})`, entrega || '', status, obs || '']]
+      values: [[pago, valorRestanteReal, entrega || '', status, obs || '']]
     }
   });
 
