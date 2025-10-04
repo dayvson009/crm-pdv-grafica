@@ -13,13 +13,13 @@ dayjs.tz.setDefault('America/Recife');
 
 exports.renderPdvVendas = async (req, res) => {
   const produtos = await sheets.getProdutos();
-  res.render('pdvVendas', { produtos, currentPage: 'pdvVendas' });
+  res.render('pdvVendas', { produtos, currentPage: 'pdvVendas', usuario: req.session.usuario });
 };
 
 exports.renderPdvPedidos = async (req, res) => {
   const produtos = await sheets.getProdutos();
   const vendedores = await sheets.getVendedores();
-  res.render('pdvPedidos', { produtos, vendedores, currentPage: 'pdvPedidos' });
+  res.render('pdvPedidos', { produtos, vendedores, currentPage: 'pdvPedidos', usuario: req.session.usuario });
 };
 
 exports.registrarVenda = async (req, res) => {
@@ -206,7 +206,8 @@ exports.dashboardPedidos = async (req, res) => {
 
     res.render('painelpedidos', { 
       porStatus, 
-      currentPage: 'painelpedidos'
+      currentPage: 'painelpedidos',
+      usuario: req.session.usuario
     });
   } catch (error) {
     console.error('Erro ao carregar dashboard:', error);
@@ -248,7 +249,7 @@ exports.editarPedido = async (req, res) => {
 
 exports.getAvisos = async (req, res) => {
   const avisos = await sheets.getAvisos();
-  res.render('avisos', { avisos, currentPage: 'avisos' });
+  res.render('avisos', { avisos, currentPage: 'avisos', usuario: req.session.usuario });
 };
 
 exports.salvarAviso = async (req, res) => {
