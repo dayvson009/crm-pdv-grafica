@@ -45,6 +45,16 @@ exports.getProdutoPorNome = async (nome) => {
   return produtos.find(p => p.nome === nome);
 };
 
+exports.getVendedores = async () => {
+  const sheets = await authSheets();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: 'Vendedores!A2:A',
+  });
+
+  return res.data.values?.map(([vendedor]) => vendedor).filter(v => v && v.trim()) || [];
+};
+
 exports.addVenda = async (linha) => {
   const sheets = await authSheets();
   await sheets.spreadsheets.values.append({
@@ -117,7 +127,7 @@ exports.getPedidos = async () => {
   const sheets = await authSheets();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'Pedidos!A2:M',
+    range: 'Pedidos!A2:N',
   });
 
   const linhas = res.data.values || [];
@@ -153,6 +163,7 @@ exports.getPedidos = async () => {
         dataEntrega: linha[10],
         status: linha[11],
         observacao: linha[12],
+        vendedor: linha[13] || '', // Nova coluna N - Vendedor
       };
     })
     .filter(pedido => pedido.status !== 'Arquivado'); // Filtrar pedidos arquivados

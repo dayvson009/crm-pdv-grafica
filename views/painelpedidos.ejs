@@ -309,6 +309,9 @@
              <strong>Loja:</strong> ${pedido.loja}
            </div>
            <div>
+             <strong>Vendedor:</strong> ${pedido.vendedor || 'N/A'}
+           </div>
+           <div>
              <label>Data de Entrega:</label>
              <input type="date" id="editar-data" value="${pedido.dataEntrega || ''}" style="margin-left: 5px; padding: 3px;">
            </div>
@@ -340,7 +343,7 @@
                 <th style="padding: 12px; text-align: center; border: none;">Qtd</th>
                 <th style="padding: 12px; text-align: right; border: none;">Valor Unit.</th>
                 <th style="padding: 12px; text-align: right; border: none;">Total</th>
-                <th style="padding: 12px; text-align: center; border: none;">Observação</th>
+                <th style="padding: 12px; text-align: center; border: none; max-width: 250px;">Observação</th>
               </tr>
             </thead>
            <tbody>
@@ -353,7 +356,7 @@
                    <td style="padding: 12px; text-align: center; border: none;">${item.qtd}</td>
                    <td style="padding: 12px; text-align: right; border: none;">R$ ${parseFloat(valorUnitario).toFixed(2).replace('.',',')}</td>
                    <td style="padding: 12px; text-align: right; border: none; font-weight: bold;">R$ ${parseFloat(totalItem).toFixed(2).replace('.',',')}</td>
-                   <td style="padding: 12px; text-align: center; border: none; font-size: 12px;">${item.observacao || '-'}</td>
+                   <td style="padding: 12px; text-align: center; border: none; font-size: 12px;max-width: 250px;">${item.observacao || '-'}</td>
                  </tr>
                `;
              }).join('')}

@@ -18,7 +18,8 @@ exports.renderPdvVendas = async (req, res) => {
 
 exports.renderPdvPedidos = async (req, res) => {
   const produtos = await sheets.getProdutos();
-  res.render('pdvPedidos', { produtos, currentPage: 'pdvPedidos' });
+  const vendedores = await sheets.getVendedores();
+  res.render('pdvPedidos', { produtos, vendedores, currentPage: 'pdvPedidos' });
 };
 
 exports.registrarVenda = async (req, res) => {
@@ -86,7 +87,7 @@ exports.registrarVenda = async (req, res) => {
 
 exports.registrarPedido = async (req, res) => {
   try {
-    const { nome, loja, telefone, email, dataEntrega, itens, observacaoGeral } = req.body;
+    const { nome, loja, telefone, email, dataEntrega, itens, observacaoGeral, vendedor } = req.body;
 
     if (!nome || !telefone || !itens || !Array.isArray(itens) || itens.length === 0) {
       return res.status(400).send('Dados inválidos');
@@ -156,7 +157,7 @@ exports.registrarPedido = async (req, res) => {
     await sheets.addMultiplasVendas(registrosVendas);
 
     // 2. Registrar resumo na aba "Pedidos"
-    // Colunas: Data, Loja, ID, Nome, Telefone, Email, Desconto, Valor Total (BRUTO), Valor Pago, Valor Restante, Data Entrega, Status, Observação
+    // Colunas: Data, Loja, ID, Nome, Telefone, Email, Desconto, Valor Total (BRUTO), Valor Pago, Valor Restante, Data Entrega, Status, Observação, Vendedor
     const valorRestanteTotal = valorTotal - descontoTotal - valorPagoTotal;
     
     const resumoPedido = [
@@ -172,7 +173,8 @@ exports.registrarPedido = async (req, res) => {
       valorRestanteTotal, // Valor Restante real calculado
       dataEntrega || '',
       'Pedidos',
-      observacaoGeral || '' // Observação geral do pedido
+      observacaoGeral || '', // Observação geral do pedido
+      vendedor || '' // Nova coluna N - Vendedor
     ];
     await sheets.addPedido(resumoPedido);
 

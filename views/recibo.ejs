@@ -241,7 +241,7 @@
                     <thead>
                         <tr>
                             <th>Produto</th>
-                            <th>Preço</th>
+                            <th>Un</th>
                             <th>Qtd</th>
                             <th style="text-align: right;">Total</th>
                         </tr>
@@ -250,7 +250,7 @@
                         <% dadosRecibo.itens.forEach((item, index) => { %>
                         <tr>
                             <td><%= item.produto %></td>
-                            <td>R$ <%= (parseFloat(item.valorTotal || 0) / parseInt(item.qtd || 1)).toFixed(2).replace('.',',') %></td>
+                            <td>R$ <%= parseFloat(item.valorUnitario || 0).toFixed(2).replace('.',',') %></td>
                             <td style="text-align: center;"><%= item.qtd %></td>
                             <td style="text-align: right;"><strong>R$ <%= parseFloat(item.valorTotal || 0).toFixed(2).replace('.',',') %></strong></td>
                         </tr>

@@ -18,6 +18,8 @@
             <label for="loja1">LOJA1</label><br>
             <input type="radio" id="loja2" name="loja" value="loja2">
             <label for="loja2">LOJA2</label><br>
+            <input type="radio" id="online" name="loja" value="online">
+            <label for="online">Online</label><br>
           </div>
           <div style="display: flex;">
             <div>
@@ -91,9 +93,23 @@
                </select>
              </div>
              <div>
-               <label>Observação do Item:</label>
-               <input type="text" id="pedido-observacao" placeholder="Observação específica do item">
+               <label>Vendedor:</label>
+               <select id="pedido-vendedor" name="vendedor" required>
+                 <option value="">Selecione o vendedor</option>
+                 <% vendedores.forEach(vendedor => { %>
+                 <option value="<%= vendedor %>"><%= vendedor %></option>
+                 <% }); %>
+               </select>
              </div>
+           </div>
+           
+           <!-- Observação Geral do Pedido -->
+           <div style="margin-top: 15px;">
+             <label style="display: block; margin-bottom: 5px; font-weight: bold;">Informações da Arte / Observação do Item:</label>
+             <textarea id="pedido-observacao" placeholder="Informações da Arte / Observação específica do item" name="observacaoItem"
+               placeholder="Observações gerais sobre o pedido, instruções especiais, etc."
+               style="width: 100%; min-height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; font-family: inherit;"
+             ></textarea>
            </div>
            
            <!-- Observação Geral do Pedido -->
@@ -324,6 +340,11 @@
     }
     if (data.nome == '' || data.telefone == '') {
         showNotification('Nome e Telefone Obrigatórios.', 'error'); // Notificação de erro
+        hideLoading(); // Esconde o loading em caso de erro de validação
+        return; // Aborta o envio
+    }
+    if (!data.vendedor || data.vendedor == '') {
+        showNotification('Por favor, selecione um vendedor.', 'error'); // Notificação de erro
         hideLoading(); // Esconde o loading em caso de erro de validação
         return; // Aborta o envio
     }
