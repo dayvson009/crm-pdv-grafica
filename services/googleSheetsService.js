@@ -26,13 +26,17 @@ exports.getProdutos = async () => {
   const sheets = await authSheets();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'Produtos!A2:C',
+    range: 'Produtos!A2:G',
   });
 
-  return res.data.values.map(([produto, custo, preco]) => ({
+  return res.data.values.map(([produto, custo, preco, lucro, margem, tipo, minimo]) => ({
     nome: produto,
     custo: custo,
-    preco: preco
+    preco: preco,
+    lucro: lucro,
+    margem: margem,
+    tipo: tipo,
+    minimo: minimo
   }));
 };
 
