@@ -2,6 +2,20 @@ const express = require('express');
 const router = express.Router();
 const pdvController = require('./controllers/pdvController');
 
+const authController = require('./controllers/authController');
+const authMiddleware = require('./middlewares/authMiddleware');
+
+// Aplica o middleware globalmente
+router.use(authMiddleware);
+
+// Rotas públicas
+router.get('/login', authController.renderLogin);
+router.post('/login', authController.login);
+router.get('/logout', authController.logout);
+
+router.get('/mudar-senha', authController.renderMudarSenha);
+router.post('/mudar-senha', authController.mudarSenha);
+
 router.get('/', pdvController.renderPdvVendas);
 router.get('/pdv', pdvController.renderPdvPedidos);
 router.post('/registrar-venda', pdvController.registrarVenda);

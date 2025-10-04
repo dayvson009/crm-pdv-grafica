@@ -10,10 +10,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "body-parser": "^2.2.0",
     "dayjs": "^1.11.13",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
+    "express-session": "^1.18.2",
     "googleapis": "^153.0.0"
   }
 }

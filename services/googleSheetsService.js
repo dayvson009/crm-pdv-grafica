@@ -55,6 +55,41 @@ exports.getVendedores = async () => {
   return res.data.values?.map(([vendedor]) => vendedor).filter(v => v && v.trim()) || [];
 };
 
+exports.getVendedoresComSenha = async () => {
+  const sheets = await authSheets();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: 'Vendedores!A2:C',
+  });
+
+  const values = res.data.values || [];
+  return values.map(([nome, email, senha]) => ({
+    nome,
+    email,
+    senha
+  }));
+};
+
+exports.atualizarSenhaVendedor = async (email, novoHash) => {
+  const sheets = await authSheets();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: 'Vendedores!A2:C',
+  });
+
+  const linhas = res.data.values || [];
+  const index = linhas.findIndex(([nome, e]) => e === email);
+  if (index === -1) throw new Error('Usuário não encontrado');
+
+  const linhaGoogle = index + 2; // +2 pois começa em A2
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `Vendedores!C${linhaGoogle}`,
+    valueInputOption: 'RAW',
+    resource: { values: [[novoHash]] },
+  });
+};
+
 exports.addVenda = async (linha) => {
   const sheets = await authSheets();
   await sheets.spreadsheets.values.append({

@@ -1,121 +1,78 @@
 # 🔍 Sistema de Busca com Autocomplete para Produtos
 
-## ✨ Funcionalidades Implementadas
+## Implementação:
+- **Passo 1**: *Criar projeto no Google Cloud*
+- Acesse: https://console.cloud.google.com/
+- Clique em “Selecionar projeto” > “Novo projeto”
+- Dê um nome (ex: crm-grafica) e clique em Criar
+- **Passo 2**: *Ativar a API do Google Sheets*
+- No projeto criado, vá no menu esquerdo: API e serviços > Biblioteca
+- Pesquise por: Google Sheets API
+- Clique nela e depois clique em Ativar
+- **Passo 3**: *Criar credenciais*
+- Acesse: API e serviços > Credenciais
+- Clique em Criar credenciais > Conta de serviço
+- Preencha o nome (ex: crm-pdv-service) e clique em Concluir
+- Na lista de contas de serviço, clique sobre a que você criou
+- Vá na aba Chaves, clique em Adicionar chave > JSON
+- O arquivo credentials.json será baixado no seu computador
+- **Passo 4**: *Compartilhar sua planilha com a conta da API*
+- No credentials.json, procure pelo campo "client_email" (exemplo: crm-pdv@nomeprojeto.iam.gserviceaccount.com)
+- Vá até sua planilha do Google:
+- Financeiro Gráfica por exemplo
+- A url da planilha Adicione no Services/googleSheetsServices, na variável `const spreadsheetId`
 
-### 🎯 **Campo de Busca Inteligente**
-- **Digitação em tempo real** - resultados aparecem conforme você digita
-- **Busca por nome** - encontra produtos que contenham ou comecem com o texto digitado
-- **Limite de resultados** - máximo de 10 produtos para melhor performance
-- **Busca case-insensitive** - não diferencia maiúsculas de minúsculas
+Acesse a porta do projeto e pronto, tudo configurado.
 
-### ⌨️ **Navegação por Teclado**
-- **↑/↓** - Navegar pelos resultados
-- **Enter** - Selecionar produto destacado
-- **Escape** - Fechar lista de resultados
-- **Tab** - Navegação normal do formulário
+** Planilha deve conter as seguintes abas e colunas, lembrando que as colunas precisam estar na mesma ordem.
+**Avisos**
+- DataHora	
+- Para (Para quem vai o aviso, busca dos colaboradores cadastrados)
+- WhatsApp Cliente (whatsapp de alguém para link rápido)
+- Texto
 
-### 🖱️ **Navegação por Mouse**
-- **Clique** - Selecionar produto diretamente
-- **Clique fora** - Fechar lista automaticamente
-- **Hover** - Destaque visual nos resultados
+**Produtos**
+- Produto	(Nome do produto)
+- Custo dos Materiais (R$)	(Custo do produto)
+- Preço de Venda (R$)	(Valor de venda)
+- Lucro (R$)	(Formula: =C3-B3)
+- Margem (%)	(Formula: =SEERRO(D3/B3;0))
+- Tipo	(unidade | metro)
+- Minimo (Valor minimo definido para o produto mesmo que o total senha inferior, ele vai mostrar o valor minimo ex: banner 10cm x 10cm - valor real R$4,00 e valor minimo é R$20,00)
 
-### 🎨 **Interface Visual**
-- **Design responsivo** - se adapta ao conteúdo
-- **Estados visuais** - campo muda de cor quando produto é selecionado
-- **Animações suaves** - transições elegantes
-- **Sombras e bordas** - aparência moderna e profissional
+**Pedidos**
+- Data hora	
+- Local Entrega	
+- N. Pedido	
+- Cliente	
+- Telefone	
+- E-mail	
+- Desconto	
+- Valor Total	
+- Valor Pago	
+- Valor Restante	
+- Data entrega	
+- Status	
+- Observação	
+- Vendedor
 
-## 📁 **Arquivos Modificados**
+**Vendas**
+- Data	
+- Loja	
+- ID Pedido	
+- Produto	
+- QTD	
+- Custo (R$)	
+- Valor Total (R$)	
+- Desconto	
+- Valor Pago (R$)	
+- Valor Restante (R$)	
+- Forma pagamento	
+- STATUS	
+- Observação	
+- Valor un.
 
-### 1. **Views**
-- `views/pdvPedidos.ejs` - Formulário de pedidos
-- `views/pdvVendas.ejs` - Formulário de vendas
-
-### 2. **Estilos**
-- `public/css/style.css` - Estilos do autocomplete
-
-### 3. **Funcionalidades**
-- Campo de busca com placeholder informativo
-- Lista dropdown de resultados
-- Campo hidden para manter compatibilidade
-- JavaScript para funcionalidade completa
-
-## 🚀 **Como Usar**
-
-### **Para o Usuário:**
-1. **Digite** o nome do produto no campo de busca
-2. **Navegue** pelos resultados com ↑/↓ ou mouse
-3. **Selecione** o produto desejado
-4. **Continue** preenchendo o formulário normalmente
-
-### **Para o Desenvolvedor:**
-1. **Campo de busca** - `<input id="produto-search">`
-2. **Lista de resultados** - `<div id="produto-results">`
-3. **Campo hidden** - `<input id="produto" name="produto">`
-4. **JavaScript** - Sistema completo incluído
-
-## 🔧 **Estrutura Técnica**
-
-### **HTML:**
-```html
-<div class="search-container">
-  <input type="text" id="produto-search" placeholder="Digite para buscar produtos...">
-  <div id="produto-results" class="search-results"></div>
-  <input type="hidden" id="produto" name="produto" required>
-</div>
-```
-
-### **CSS:**
-- `.search-container` - Container principal
-- `.search-results` - Lista de resultados
-- `.search-result-item` - Item individual
-- `.search-result-item.selected` - Item selecionado
-- `.search-no-results` - Mensagem sem resultados
-
-### **JavaScript:**
-- `filterProducts(query)` - Filtra produtos
-- `showResults(products)` - Exibe resultados
-- `selectProduct(produto)` - Seleciona produto
-- Event listeners para teclado e mouse
-
-## 📱 **Responsividade**
-
-- **Largura fixa** - 300px para consistência
-- **Z-index alto** - 1000 para ficar acima de outros elementos
-- **Scroll automático** - para listas longas
-- **Posicionamento absoluto** - relativo ao container
-
-## 🎯 **Benefícios**
-
-### **Para o Usuário:**
-- ✅ **Busca rápida** - não precisa rolar listas longas
-- ✅ **Intuitivo** - funciona como outros sistemas modernos
-- ✅ **Eficiente** - encontra produtos em poucos cliques
-- ✅ **Acessível** - navegação por teclado completa
-
-### **Para o Sistema:**
-- ✅ **Performance** - busca local, sem requisições ao servidor
-- ✅ **Compatibilidade** - mantém estrutura existente
-- ✅ **Manutenibilidade** - código limpo e organizado
-- ✅ **Escalabilidade** - fácil de expandir para outros campos
-
-## 🔮 **Possíveis Melhorias Futuras**
-
-1. **Busca por código** - além do nome
-2. **Categorias** - agrupar produtos por tipo
-3. **Histórico** - produtos mais usados
-4. **Favoritos** - produtos marcados
-5. **Busca avançada** - múltiplos critérios
-6. **Cache local** - para produtos muito usados
-
-## 📝 **Notas de Implementação**
-
-- **Compatibilidade** - funciona com formulários existentes
-- **Fallback** - campo hidden mantém funcionalidade
-- **Validação** - campo required funciona normalmente
-- **Estados** - visual feedback para seleção
-- **Performance** - busca local instantânea
-
----
-
-**🎉 Sistema implementado com sucesso! Agora os usuários podem buscar produtos de forma muito mais eficiente e intuitiva.**
+**Vendedores*
+- NOME
+- Login (pode ser e-mail ou login mesmo sem espaço)
+- Senha (padrão - $2b$10$AOsYjnws3spqkIe3NbyhpeXhthFRNlgl3sTSzY/vg8kt3USZeM1eq)
