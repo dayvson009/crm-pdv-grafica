@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const pdvController = require('./controllers/pdvController');
-
+const produtosController = require('./controllers/produtosController');
+const utilidadesController = require('./controllers/utilidadesController');
 const authController = require('./controllers/authController');
 const authMiddleware = require('./middlewares/authMiddleware');
 
@@ -29,5 +30,13 @@ router.post('/avisos', pdvController.salvarAviso);
 router.post('/avisos/deletar', pdvController.deletarAviso);
 router.get('/estatisticas-arquivados', pdvController.getEstatisticasArquivados);
 router.get('/recibo/:id', pdvController.visualizarRecibo);
+
+// Rotas para produtos
+router.get('/produtos', produtosController.renderProdutos);
+router.post('/cadastrar-produto', produtosController.cadastrarProduto);
+
+// Rotas para utilidades
+router.get('/utilidades', utilidadesController.renderUtilidades);
+router.get('/utilidades/geradorcurriculos', utilidadesController.geradorCurriculos);
 
 module.exports = router;

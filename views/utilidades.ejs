@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Utilidades</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .card-gadget {
+        max-width: 200px;
+        object-fit: cover;
+        box-shadow: 0 0 10px #ccccc9;
+        border-radius: 10px;
+        padding: 5px;
+    }
+    .card-gadget img {
+        width: 100px;
+        object-fit: cover;
+        margin: 0 auto;
+        display: block;
+    }
+    .card-gadget h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-top: 10px;
+      margin-bottom: 5px;
+      text-align: center;
+    }
+    .card-gadget p {
+      font-size: 1rem;
+      font-weight: 400;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .card-gadget a {
+      text-decoration: none;
+      color: #000;
+    }
+    .card-gadget a:hover {
+      color: #313131;
+    }
+    .card-gadget a:hover h3 {
+      color: #1b1b1b;
+    }
+    .card-gadget a:hover p {
+      color: #1d1d1d;
+    }
+  </style>
+</head>
+<body>
+  <%- include('partials/sidebar') %>
+
+  <div style="padding: 20px; margin-left: 210px;">
+    <h2 class="title-page">Utilidades</h2>
+
+    <div class="card-gadget">
+        <a href="/utilidades/geradorcurriculos">
+            <img src="./images/geradorcurriculos.jpg" alt="Gerador Currículos">
+            <h3>Gerador de Currículos</h3>
+            <p>Utilize para gerar currículos de forma automática.</p>
+        </a>
+    </div>
+
+  </div>
+</body>
+</html>

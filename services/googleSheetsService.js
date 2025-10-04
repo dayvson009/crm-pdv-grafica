@@ -55,6 +55,37 @@ exports.getVendedores = async () => {
   return res.data.values?.map(([vendedor]) => vendedor).filter(v => v && v.trim()) || [];
 };
 
+exports.addProduto = async (dadosProduto) => {
+  const sheets = await authSheets();
+  
+  // Buscar a próxima linha vazia na aba Produtos
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: 'Produtos!A2:A',
+  });
+  
+  const linhas = res.data.values?.length || 0;
+  const proximaLinha = linhas + 2; // +2 porque começa da linha 2
+  
+  // Montar os dados para inserção
+  const linhaProduto = [
+    dadosProduto.produto,                    // Coluna A
+    dadosProduto.custo,                      // Coluna B
+    dadosProduto.preco,                      // Coluna C
+    `=C${proximaLinha}-B${proximaLinha}`,   // Coluna D (lucro - fórmula)
+    `=SEERRO(D${proximaLinha}/B${proximaLinha};0)`, // Coluna E (margem - fórmula)
+    dadosProduto.tipo,                       // Coluna F
+    dadosProduto.minimo                      // Coluna G
+  ];
+  
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `Produtos!A${proximaLinha}:G${proximaLinha}`,
+    valueInputOption: 'USER_ENTERED',
+    resource: { values: [linhaProduto] }
+  });
+};
+
 exports.getVendedoresComSenha = async () => {
   const sheets = await authSheets();
   const res = await sheets.spreadsheets.values.get({
