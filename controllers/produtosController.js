@@ -1,7 +1,7 @@
 const sheets = require('../services/googleSheetsService');
 
 exports.renderProdutos = async (req, res) => {
-  res.render('produtos', { currentPage: 'produtos' });
+  res.render('produtos', { currentPage: 'produtos', usuario: req.session.usuario });
 };
 
 exports.cadastrarProduto = async (req, res) => {
