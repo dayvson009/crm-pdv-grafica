@@ -105,31 +105,78 @@ exports.registrarPedido = async (req, res) => {
     // Buscar todos os produtos de uma vez para otimizar
     const todosProdutos = await sheets.getProdutos();
     
+    // Helpers
+    const parseNumero = (valor, padrao = 0) => {
+      if (valor === null || valor === undefined || valor === '') return padrao;
+      if (typeof valor === 'number') return valor;
+      if (typeof valor === 'string') {
+        const cleanValue = valor.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
+        const num = parseFloat(cleanValue);
+        return isNaN(num) ? padrao : num;
+      }
+      return padrao;
+    };
+
+    const formatarDimensao = (valor) => {
+      const numero = parseNumero(valor, 0);
+      if (numero === 0) return '0';
+      const arredondado = Math.round(numero * 100) / 100;
+      let texto = arredondado.toFixed(2).replace('.', ',');
+      if (texto.endsWith(',00')) {
+        texto = texto.slice(0, -3);
+      }
+      return texto;
+    };
+
     // 1. Registrar cada item na aba "Vendas"
     const registrosVendas = itens.map((item, index) => {
-      // Garantir que os valores sejam números
-      const desconto = parseFloat(item.desconto) || 0;
-      const valorPago = parseFloat(item.valorPago) || 0;
-      const valorTotalItem = parseFloat(item.valorTotal) || 0;
-      const valorTotalBrutoItem = parseFloat(item.valorTotalBruto) || 0;
+      const quantidade = parseInt(item.quantidade, 10) || 0;
+      const desconto = parseNumero(item.desconto, 0);
+      const valorPago = parseNumero(item.valorPago, 0);
+      let valorTotalItem = parseNumero(item.valorTotal, 0);
+      let valorTotalBrutoItem = parseNumero(item.valorTotalBruto, 0);
+      const largura = parseNumero(item.largura, 0);
+      const altura = parseNumero(item.altura, 0);
       
       // Buscar produto na lista já carregada
       const produto = todosProdutos.find(p => p.nome === item.produto);
       
-      // Calcular valor unitário baseado no tipo de produto
-      let valorUnitario = 0;
-      if (produto) {
-        const preco = parseFloat(produto.preco.replace('R$ ', '').replace(',', '.')) || 0;
-        valorUnitario = preco; // Valor unitário (por m² ou por unidade)
+      const precoProduto = produto ? parseNumero(produto.preco, 0) : 0;
+      const custoProduto = produto ? parseNumero(produto.custo, 0) : 0;
+      const minimoProduto = produto ? parseNumero(produto.minimo, 0) : 0;
+      const tipoProduto = produto && produto.tipo ? produto.tipo.toLowerCase() : '';
+
+      const isMetro = tipoProduto === 'metro';
+
+      let valorUnitario = precoProduto;
+      let custoTotal = custoProduto * quantidade;
+      let nomeProdutoPlanilha = item.produto;
+
+      if (isMetro) {
+        const area = Math.max(largura, 0) * Math.max(altura, 0);
+        let valorUnitarioCalculado = precoProduto * area;
+        if (minimoProduto > 0 && valorUnitarioCalculado < minimoProduto) {
+          valorUnitarioCalculado = minimoProduto;
+        }
+        const custoUnitarioCalculado = custoProduto * area;
+
+        valorUnitario = valorUnitarioCalculado;
+        valorTotalBrutoItem = valorUnitarioCalculado * quantidade;
+        custoTotal = custoUnitarioCalculado * quantidade;
+        valorTotalItem = Math.max(valorTotalBrutoItem - desconto, 0);
+
+        if (largura > 0 && altura > 0) {
+          const larguraFormatada = formatarDimensao(largura);
+          const alturaFormatada = formatarDimensao(altura);
+          nomeProdutoPlanilha = `${item.produto} ${larguraFormatada}x${alturaFormatada}`;
+        }
+      } else if (produto) {
+        valorUnitario = precoProduto;
+        valorTotalBrutoItem = precoProduto * quantidade;
+        custoTotal = custoProduto * quantidade;
+        valorTotalItem = Math.max(valorTotalBrutoItem - desconto, 0);
       }
-      
-      // Calcular custo unitário (coluna B da planilha Produtos)
-      let custoUnitario = 0;
-      if (produto) {
-        custoUnitario = parseFloat(produto.custo.replace('R$ ', '').replace(',', '.')) || 0;
-      }
-      
-      const custoTotal = custoUnitario * item.quantidade;
+
       const valorRestante = valorTotalItem - valorPago;
       
       valorTotal += valorTotalBrutoItem; // Agora é o total bruto
@@ -140,8 +187,8 @@ exports.registrarPedido = async (req, res) => {
         dataHora,
         loja,
         novoID,
-        item.produto,
-        item.quantidade,
+        nomeProdutoPlanilha,
+        quantidade,
         custoTotal, // Custo total real
         valorTotalBrutoItem, // Valor total bruto real
         desconto,
